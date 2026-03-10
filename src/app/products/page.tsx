@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, Search, Edit2, Trash2, Package } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Plus, Search, Edit2, Trash2, Package, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { ProductFormModal } from "@/components/ProductFormModal";
 
 export default function ProductsPage() {
@@ -11,17 +11,28 @@ export default function ProductsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
-    const fetchProducts = async () => {
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [jumpPage, setJumpPage] = useState("1");
+    const perPage = 20;
+
+    const fetchProducts = async (page: number) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch("/api/products");
+            const res = await fetch(`/api/products?page=${page}&per_page=${perPage}`);
             if (!res.ok) {
-                const errData = await res.json();
+                const errData = await res.json().catch(() => ({}));
                 throw new Error(errData.error || "Failed to fetch products");
             }
             const data = await res.json();
-            setProducts(Array.isArray(data) ? data : []);
+            setProducts(data.products || []);
+            setTotalItems(data.totalItems || 0);
+            setTotalPages(data.totalPages || 1);
+            setCurrentPage(page);
+            setJumpPage(page.toString());
         } catch (err: any) {
             console.error(err);
             setError(err.message);
@@ -31,20 +42,31 @@ export default function ProductsPage() {
     };
 
     useEffect(() => {
-        fetchProducts();
-    }, []);
+        fetchProducts(currentPage);
+    }, [currentPage]);
+
+    const handleJumpPage = (e: React.FormEvent) => {
+        e.preventDefault();
+        const targetPage = parseInt(jumpPage, 10);
+        if (!isNaN(targetPage) && targetPage >= 1 && targetPage <= totalPages) {
+            setCurrentPage(targetPage);
+        } else {
+            setJumpPage(currentPage.toString()); // Revert if invalid
+        }
+    };
 
     const handleDelete = async (id: number) => {
         if (!confirm("Are you sure you want to delete this product?")) return;
 
         // Optimistic UI update
         setProducts(products.filter((p) => p.id !== id));
+        setTotalItems(prev => Math.max(0, prev - 1));
 
         try {
             await fetch(`/api/products/${id}`, { method: "DELETE" });
         } catch (err) {
             console.error("Delete failed", err);
-            fetchProducts(); // Revert on failure
+            fetchProducts(currentPage); // Revert on failure
         }
     };
 
@@ -57,6 +79,56 @@ export default function ProductsPage() {
         setEditingProduct(null);
         setIsModalOpen(true);
     };
+
+    const PaginationControls = () => (
+        <div className="flex items-center gap-4 text-sm text-zinc-400">
+            <span className="font-medium whitespace-nowrap">
+                {totalItems.toLocaleString()} items
+            </span>
+            <div className="flex items-center gap-1">
+                <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1 || loading}
+                    className="p-1.5 rounded bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronsLeft className="h-4 w-4" />
+                </button>
+                <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1 || loading}
+                    className="p-1.5 rounded bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                <form onSubmit={handleJumpPage} className="flex items-center gap-2 mx-2">
+                    <input
+                        type="text"
+                        value={jumpPage}
+                        onChange={(e) => setJumpPage(e.target.value)}
+                        onBlur={handleJumpPage}
+                        className="w-12 text-center rounded border border-zinc-700 bg-zinc-950 px-2 py-1 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                    <span className="whitespace-nowrap">of {totalPages}</span>
+                </form>
+
+                <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages || loading}
+                    className="p-1.5 rounded bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronRight className="h-4 w-4" />
+                </button>
+                <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages || loading}
+                    className="p-1.5 rounded bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronsRight className="h-4 w-4" />
+                </button>
+            </div>
+        </div>
+    );
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -76,16 +148,25 @@ export default function ProductsPage() {
                 </button>
             </div>
 
-            <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3 shadow-md">
-                <Search className="h-5 w-5 text-zinc-500" />
-                <input
-                    type="text"
-                    placeholder="Search products..."
-                    className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
-                />
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3 shadow-md">
+                <div className="flex w-full lg:w-auto items-center gap-3">
+                    <Search className="h-5 w-5 text-zinc-500" />
+                    <input
+                        type="text"
+                        placeholder="Search products..."
+                        className="flex-1 lg:w-64 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
+                    />
+                </div>
+                {/* Upper Pagination */}
+                <div className="ml-auto">
+                    <PaginationControls />
+                </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-sm shadow-xl">
+            <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-sm shadow-xl relative">
+                {loading && (
+                    <div className="absolute inset-0 bg-zinc-950/20 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none" />
+                )}
                 <table className="w-full text-left text-sm text-zinc-400">
                     <thead className="border-b border-zinc-800 bg-zinc-900/80 text-xs uppercase text-zinc-300">
                         <tr>
@@ -103,7 +184,7 @@ export default function ProductsPage() {
                                     Error: {error}
                                 </td>
                             </tr>
-                        ) : loading ? (
+                        ) : loading && products.length === 0 ? (
                             // Skeleton rows
                             Array.from({ length: 5 }).map((_, i) => (
                                 <tr key={i} className="animate-pulse">
@@ -164,6 +245,13 @@ export default function ProductsPage() {
                         )}
                     </tbody>
                 </table>
+
+                {/* Lower Pagination */}
+                {products.length > 0 && !error && (
+                    <div className="border-t border-zinc-800 bg-zinc-900/80 px-6 py-4 flex justify-end">
+                        <PaginationControls />
+                    </div>
+                )}
             </div>
 
             {isModalOpen && (
@@ -172,7 +260,7 @@ export default function ProductsPage() {
                     onClose={() => setIsModalOpen(false)}
                     onSuccess={() => {
                         setIsModalOpen(false);
-                        fetchProducts();
+                        fetchProducts(currentPage);
                     }}
                 />
             )}
