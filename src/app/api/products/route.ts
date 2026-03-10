@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     const perPage = searchParams.get('per_page') || '20';
 
     try {
-        const products = await wooFetch(`/products?page=${page}&per_page=${perPage}&status=publish,draft,private,pending`);
+        const products = await wooFetch(`/products?page=${page}&per_page=${perPage}&status=any`);
         return NextResponse.json(products);
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
