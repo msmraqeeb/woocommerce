@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, ShoppingCart, Truck, Loader2, CheckCircle2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, X } from "lucide-react";
+import { Search, ShoppingCart, Truck, Loader2, CheckCircle2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, X, Save, Trash2, Plus } from "lucide-react";
 
 export default function OrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
@@ -9,6 +9,11 @@ export default function OrdersPage() {
     const [error, setError] = useState<string | null>(null);
     const [updatingId, setUpdatingId] = useState<number | null>(null);
     const [viewingOrder, setViewingOrder] = useState<any | null>(null);
+    const [editingOrderContent, setEditingOrderContent] = useState<any | null>(null);
+    const [isSavingOrder, setIsSavingOrder] = useState(false);
+    const [productSearch, setProductSearch] = useState("");
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searchingProducts, setSearchingProducts] = useState(false);
 
     // Pagination & Search State
     const [currentPage, setCurrentPage] = useState(1);
@@ -70,13 +75,18 @@ export default function OrdersPage() {
         }
     };
 
+    useEffect(() => {
+        if (viewingOrder) {
+            setEditingOrderContent(JSON.parse(JSON.stringify(viewingOrder)));
+        } else {
+            setEditingOrderContent(null);
+        }
+    }, [viewingOrder]);
+
     const handleUpdateStatus = async (id: number, newStatus: string) => {
         setUpdatingId(id);
-
-        // Optimistic UI update
         const previousOrders = [...orders];
         setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o));
-
         try {
             const res = await fetch(`/api/orders/${id}`, {
                 method: "PUT",
@@ -84,13 +94,101 @@ export default function OrdersPage() {
                 body: JSON.stringify({ status: newStatus }),
             });
             if (!res.ok) throw new Error("Update failed");
+            // Refresh to get correct totals/states if needed
         } catch (err) {
             console.error(err);
-            setOrders(previousOrders); // Revert
+            setOrders(previousOrders);
             alert("Failed to update status.");
         } finally {
             setUpdatingId(null);
         }
+    };
+
+    const handleSaveOrder = async () => {
+        if (!editingOrderContent) return;
+        setIsSavingOrder(true);
+        try {
+            const res = await fetch(`/api/orders/${editingOrderContent.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(editingOrderContent),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Failed to save order");
+            }
+            const updated = await res.json();
+            setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
+            setViewingOrder(null);
+        } catch (err: any) {
+            alert(err.message);
+        } finally {
+            setIsSavingOrder(false);
+        }
+    };
+
+    const handleProductSearch = async (val: string) => {
+        setProductSearch(val);
+        if (val.length < 3) {
+            setSearchResults([]);
+            return;
+        }
+        setSearchingProducts(true);
+        try {
+            const res = await fetch(`/api/products?search=${encodeURIComponent(val)}&per_page=5`);
+            const data = await res.json();
+            setSearchResults(data.products || []);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSearchingProducts(false);
+        }
+    };
+
+    const addProductToOrder = (product: any) => {
+        if (!editingOrderContent) return;
+        const newItem = {
+            product_id: product.id,
+            name: product.name,
+            quantity: 1,
+            price: product.price,
+            total: product.price,
+            sku: product.sku
+        };
+        setEditingOrderContent({
+            ...editingOrderContent,
+            line_items: [...editingOrderContent.line_items, newItem]
+        });
+        setProductSearch("");
+        setSearchResults([]);
+    };
+
+    const removeProductFromOrder = (index: number) => {
+        if (!editingOrderContent) return;
+        const items = [...editingOrderContent.line_items];
+        items.splice(index, 1);
+        setEditingOrderContent({ ...editingOrderContent, line_items: items });
+    };
+
+    const updateItemQty = (index: number, qty: number) => {
+        if (!editingOrderContent) return;
+        const items = [...editingOrderContent.line_items];
+        items[index].quantity = Math.max(1, qty);
+        items[index].total = (parseFloat(items[index].price) * items[index].quantity).toFixed(2);
+        setEditingOrderContent({ ...editingOrderContent, line_items: items });
+    };
+
+    const calculateSubtotal = () => {
+        if (!editingOrderContent) return 0;
+        return editingOrderContent.line_items.reduce((sum: number, item: any) => sum + parseFloat(item.total || 0), 0).toFixed(2);
+    };
+
+    const calculateTotal = () => {
+        if (!editingOrderContent) return 0;
+        const subtotal = parseFloat(calculateSubtotal().toString());
+        const shipping = parseFloat(editingOrderContent.shipping_total || 0);
+        const discount = parseFloat(editingOrderContent.discount_total || 0);
+        return (subtotal + shipping - discount).toFixed(2);
     };
 
     const getStatusColor = (status: string) => {
@@ -204,7 +302,6 @@ export default function OrdersPage() {
                                 </td>
                             </tr>
                         ) : loading ? (
-                            // Skeleton rows
                             Array.from({ length: 5 }).map((_, i) => (
                                 <tr key={i} className="animate-pulse">
                                     <td className="px-6 py-4"><div className="h-5 w-16 rounded bg-zinc-800"></div></td>
@@ -245,7 +342,7 @@ export default function OrdersPage() {
                                                 <button
                                                     onClick={() => setViewingOrder(order)}
                                                     className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-indigo-400"
-                                                    title="View Items"
+                                                    title="Edit Order"
                                                 >
                                                     <Eye className="h-4 w-4" />
                                                 </button>
@@ -256,12 +353,12 @@ export default function OrdersPage() {
                                                         onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
                                                         className={`appearance-none border text-xs font-semibold rounded-lg text-center pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all capitalize ${getStatusColor(order.status)} ${isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:brightness-110"}`}
                                                     >
-                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="pending">Pending</option>
-                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="processing">Processing</option>
-                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="on-hold">On Hold</option>
-                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="completed">Completed</option>
-                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="cancelled">Cancelled</option>
-                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="refunded">Refunded</option>
+                                                        <option value="pending">Pending</option>
+                                                        <option value="processing">Processing</option>
+                                                        <option value="on-hold">On Hold</option>
+                                                        <option value="completed">Completed</option>
+                                                        <option value="cancelled">Cancelled</option>
+                                                        <option value="refunded">Refunded</option>
                                                     </select>
                                                     {isUpdating && (
                                                         <div className="absolute right-2 top-1.5 pointer-events-none">
@@ -286,62 +383,211 @@ export default function OrdersPage() {
                 )}
             </div>
 
-            {/* Order Details Modal */}
-            {viewingOrder && (
+            {/* Order Editor Modal */}
+            {viewingOrder && editingOrderContent && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-200">
                         <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80">
                             <div>
-                                <h2 className="text-xl font-bold text-zinc-100">Order #{viewingOrder.number}</h2>
-                                <p className="text-xs text-zinc-500 mt-1">{new Date(viewingOrder.date_created).toLocaleString()}</p>
+                                <h2 className="text-xl font-bold text-zinc-100 italic">Edit Order #{editingOrderContent.number}</h2>
+                                <p className="text-xs text-zinc-500 mt-1 uppercase tracking-widest">{new Date(editingOrderContent.date_created).toLocaleString()}</p>
                             </div>
-                            <button onClick={() => setViewingOrder(null)} className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 transition-colors">
-                                <X className="h-5 w-5" />
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleSaveOrder}
+                                    disabled={isSavingOrder}
+                                    className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 transition-all hover:bg-indigo-500 disabled:opacity-50"
+                                >
+                                    {isSavingOrder ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                    Save Changes
+                                </button>
+                                <button onClick={() => setViewingOrder(null)} className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 transition-colors">
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="p-6 overflow-y-auto space-y-6">
-                            {/* Customer Info */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div>
-                                    <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-2">Billing Address</h3>
-                                    <p className="text-zinc-200 text-sm leading-relaxed">
-                                        {viewingOrder.billing.first_name} {viewingOrder.billing.last_name}<br />
-                                        {viewingOrder.billing.address_1}<br />
-                                        {viewingOrder.billing.city}, {viewingOrder.billing.state} {viewingOrder.billing.postcode}<br />
-                                        {viewingOrder.billing.phone}
-                                    </p>
+                        <div className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="lg:col-span-2 space-y-6">
+                                    <div className="bg-zinc-950/30 p-5 rounded-2xl border border-zinc-800/50 space-y-4">
+                                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800 pb-2 flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" /> Billing Information
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] text-zinc-500 uppercase font-bold">First Name</label>
+                                                <input
+                                                    value={editingOrderContent.billing.first_name}
+                                                    onChange={(e) => setEditingOrderContent({ ...editingOrderContent, billing: { ...editingOrderContent.billing, first_name: e.target.value } })}
+                                                    className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] text-zinc-500 uppercase font-bold">Last Name</label>
+                                                <input
+                                                    value={editingOrderContent.billing.last_name}
+                                                    onChange={(e) => setEditingOrderContent({ ...editingOrderContent, billing: { ...editingOrderContent.billing, last_name: e.target.value } })}
+                                                    className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div className="col-span-2 space-y-1">
+                                                <label className="text-[10px] text-zinc-500 uppercase font-bold">Address</label>
+                                                <input
+                                                    value={editingOrderContent.billing.address_1}
+                                                    onChange={(e) => setEditingOrderContent({ ...editingOrderContent, billing: { ...editingOrderContent.billing, address_1: e.target.value } })}
+                                                    className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] text-zinc-500 uppercase font-bold">Phone</label>
+                                                <input
+                                                    value={editingOrderContent.billing.phone}
+                                                    onChange={(e) => setEditingOrderContent({ ...editingOrderContent, billing: { ...editingOrderContent.billing, phone: e.target.value } })}
+                                                    className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] text-zinc-500 uppercase font-bold">Email</label>
+                                                <input
+                                                    value={editingOrderContent.billing.email}
+                                                    onChange={(e) => setEditingOrderContent({ ...editingOrderContent, billing: { ...editingOrderContent.billing, email: e.target.value } })}
+                                                    className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
-                                    <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-2">Order Stats</h3>
-                                    <div className="space-y-1">
-                                        <p className="text-sm text-zinc-300 flex justify-between"><span>Status:</span> <span className="font-semibold text-indigo-400">{viewingOrder.status}</span></p>
-                                        <p className="text-sm text-zinc-300 flex justify-between"><span>Payment:</span> <span className="font-semibold text-zinc-100">{viewingOrder.payment_method_title}</span></p>
+
+                                <div className="space-y-6">
+                                    <div className="bg-zinc-950/30 p-5 rounded-2xl border border-zinc-800/50 space-y-4 shadow-inner">
+                                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800 pb-2">Costs & Adjustments</h3>
+                                        <div className="space-y-4">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] text-zinc-500 uppercase font-bold">Shipping Cost (৳)</label>
+                                                <input
+                                                    type="number"
+                                                    value={editingOrderContent.shipping_total}
+                                                    onChange={(e) => setEditingOrderContent({ ...editingOrderContent, shipping_total: e.target.value })}
+                                                    className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 font-mono"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] text-zinc-500 uppercase font-bold">Discount / Coupon (৳)</label>
+                                                <input
+                                                    type="number"
+                                                    value={editingOrderContent.discount_total}
+                                                    onChange={(e) => setEditingOrderContent({ ...editingOrderContent, discount_total: e.target.value })}
+                                                    className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 font-mono"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] text-zinc-500 uppercase font-bold">Status</label>
+                                                <select
+                                                    value={editingOrderContent.status}
+                                                    onChange={(e) => setEditingOrderContent({ ...editingOrderContent, status: e.target.value })}
+                                                    className={`w-full appearance-none border border-zinc-800 rounded-lg px-3 py-2 text-sm font-semibold capitalize bg-zinc-900 text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                                                >
+                                                    <option value="pending">Pending</option>
+                                                    <option value="processing">Processing</option>
+                                                    <option value="on-hold">On Hold</option>
+                                                    <option value="completed">Completed</option>
+                                                    <option value="cancelled">Cancelled</option>
+                                                    <option value="refunded">Refunded</option>
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Item List */}
-                            <div>
-                                <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3">Line Items</h3>
-                                <div className="space-y-3">
-                                    {viewingOrder.line_items.map((item: any) => (
-                                        <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-zinc-800/40 border border-zinc-800/60">
-                                            <div className="flex-1">
-                                                <p className="text-zinc-100 font-medium text-sm">{item.name}</p>
-                                                <p className="text-xs text-zinc-500 mt-1">Quantity: {item.quantity} × {viewingOrder.currency_symbol}{item.price}</p>
+                            <div className="space-y-4 bg-zinc-950/20 p-6 rounded-3xl border border-zinc-800/40">
+                                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+                                    <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
+                                        Line Items
+                                    </h3>
+                                    <div className="relative w-64">
+                                        <div className="flex items-center gap-2 bg-zinc-900/80 border border-zinc-800 rounded-xl px-3 py-1.5 shadow-sm">
+                                            <Search className="h-4 w-4 text-zinc-500" />
+                                            <input
+                                                placeholder="Add product..."
+                                                value={productSearch}
+                                                onChange={(e) => handleProductSearch(e.target.value)}
+                                                className="bg-transparent text-xs text-zinc-100 focus:outline-none w-full"
+                                            />
+                                        </div>
+                                        {searchResults.length > 0 && (
+                                            <div className="absolute top-full mt-2 left-0 right-0 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-20 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                                                {searchResults.map(p => (
+                                                    <button
+                                                        key={p.id}
+                                                        onClick={() => addProductToOrder(p)}
+                                                        className="w-full text-left px-4 py-2 text-xs text-zinc-300 hover:bg-indigo-600 hover:text-white transition-colors flex items-center gap-2"
+                                                    >
+                                                        <div className="h-6 w-6 rounded bg-zinc-800 shrink-0 overflow-hidden">
+                                                            {p.images?.[0]?.src && <img src={p.images[0].src} className="h-full w-full object-cover" />}
+                                                        </div>
+                                                        <span className="truncate">{p.name} - ৳{p.price}</span>
+                                                    </button>
+                                                ))}
                                             </div>
-                                            <p className="font-semibold text-zinc-100 text-sm ml-4">{viewingOrder.currency_symbol}{item.total}</p>
+                                        )}
+                                        {searchingProducts && (
+                                            <div className="absolute right-3 top-2.5">
+                                                <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {editingOrderContent.line_items.map((item: any, idx: number) => (
+                                        <div key={idx} className="group flex items-center justify-between p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/50 hover:bg-zinc-800/40 transition-all">
+                                            <div className="flex-1 space-y-1">
+                                                <p className="text-zinc-100 font-bold text-sm group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{item.name}</p>
+                                                <p className="text-[10px] text-zinc-500 font-mono">SKU: {item.sku || "N/A"}</p>
+                                            </div>
+                                            <div className="flex items-center gap-8">
+                                                <div className="flex items-center gap-3">
+                                                    <label className="text-[10px] text-zinc-500 uppercase font-black">Qty</label>
+                                                    <input
+                                                        type="number"
+                                                        value={item.quantity}
+                                                        onChange={(e) => updateItemQty(idx, parseInt(e.target.value))}
+                                                        className="w-16 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-100 text-center font-bold"
+                                                    />
+                                                </div>
+                                                <div className="w-24 text-right">
+                                                    <p className="text-[10px] text-zinc-500 uppercase italic mb-1">Total</p>
+                                                    <p className="font-bold text-zinc-100 text-sm">৳{item.total}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => removeProductFromOrder(idx)}
+                                                    className="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
+                                    {editingOrderContent.line_items.length === 0 && (
+                                        <div className="py-12 text-center text-zinc-600 italic text-sm">
+                                            No products in this order. Use the search box above to add some.
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-900/50 flex justify-end items-center gap-4">
+                        <div className="px-8 py-5 border-t border-zinc-800 bg-zinc-950/80 flex justify-between items-center backdrop-blur-md">
+                            <div className="flex gap-8 text-xs text-zinc-500 uppercase font-bold tracking-widest">
+                                <div>Subtotal: <span className="text-zinc-200 ml-1 italic">৳{calculateSubtotal()}</span></div>
+                                <div>Shipping: <span className="text-zinc-200 ml-1 italic">৳{editingOrderContent.shipping_total}</span></div>
+                                <div className="text-red-400/80">Discount: <span className="ml-1 italic">৳{editingOrderContent.discount_total}</span></div>
+                            </div>
                             <div className="text-right">
-                                <p className="text-xs text-zinc-500 uppercase font-semibold">Total Amount</p>
-                                <p className="text-2xl font-bold text-indigo-400">{viewingOrder.currency_symbol}{viewingOrder.total}</p>
+                                <p className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.2em] mb-1">Payable Amount</p>
+                                <p className="text-4xl font-black text-indigo-400 leading-none drop-shadow-2xl">৳{calculateTotal()}</p>
                             </div>
                         </div>
                     </div>

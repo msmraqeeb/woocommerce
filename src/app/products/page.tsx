@@ -190,6 +190,7 @@ export default function ProductsPage() {
                         <tr>
                             <th className="px-6 py-4 font-semibold">Product</th>
                             <th className="px-6 py-4 font-semibold">SKU</th>
+                            <th className="px-6 py-4 font-semibold text-center">Quantity</th>
                             <th className="px-6 py-4 font-semibold">Price</th>
                             <th className="px-6 py-4 font-semibold">Status</th>
                             <th className="px-6 py-4 font-semibold text-right">Actions</th>
@@ -198,7 +199,7 @@ export default function ProductsPage() {
                     <tbody className="divide-y divide-zinc-800/50">
                         {error ? (
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-red-400">
+                                <td colSpan={6} className="px-6 py-12 text-center text-red-400">
                                     Error: {error}
                                 </td>
                             </tr>
@@ -208,6 +209,7 @@ export default function ProductsPage() {
                                 <tr key={i} className="animate-pulse">
                                     <td className="px-6 py-4"><div className="h-5 w-48 rounded bg-zinc-800"></div></td>
                                     <td className="px-6 py-4"><div className="h-4 w-16 rounded bg-zinc-800"></div></td>
+                                    <td className="px-6 py-4 text-center"><div className="h-4 w-10 rounded bg-zinc-800 mx-auto"></div></td>
                                     <td className="px-6 py-4"><div className="h-4 w-20 rounded bg-zinc-800"></div></td>
                                     <td className="px-6 py-4"><div className="h-6 w-16 rounded-full bg-zinc-800"></div></td>
                                     <td className="px-6 py-4 text-right"><div className="h-8 w-16 rounded bg-zinc-800 ml-auto"></div></td>
@@ -215,7 +217,7 @@ export default function ProductsPage() {
                             ))
                         ) : products.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
+                                <td colSpan={6} className="px-6 py-12 text-center text-zinc-500">
                                     No products found. Add one to get started.
                                 </td>
                             </tr>
@@ -233,6 +235,19 @@ export default function ProductsPage() {
                                         <span className="truncate max-w-[200px]">{product.name}</span>
                                     </td>
                                     <td className="px-6 py-4">{product.sku || "N/A"}</td>
+                                    <td className="px-6 py-4 text-center font-medium">
+                                        {product.type === "variable" ? (
+                                            <span className="text-zinc-500 text-xs italic">Variable</span>
+                                        ) : (
+                                            product.manage_stock ? (
+                                                <span className={product.stock_quantity > 0 ? "text-zinc-100" : "text-red-400 font-bold"}>
+                                                    {product.stock_quantity ?? 0}
+                                                </span>
+                                            ) : (
+                                                <span className="text-zinc-500">—</span>
+                                            )
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4">৳{product.price || "0.00"}</td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${product.status === "publish"
