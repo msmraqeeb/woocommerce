@@ -12,12 +12,11 @@ export async function wooFetch(endpoint: string, options: RequestInit = {}) {
     const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Basic ${authString}`,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         ...options.headers,
     };
 
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-
-    // adding default per_page to 100 for some endpoints if not provided via query
 
     try {
         const response = await fetch(`${url}/wp-json/wc/v3${path}`, {
@@ -26,9 +25,17 @@ export async function wooFetch(endpoint: string, options: RequestInit = {}) {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
+            let errorText = await response.text();
+            // Sanitize HTML responses to prevent dumping raw HTML in UI
+            if (errorText.includes('<html') || errorText.includes('<!DOCTYPE')) {
+                // Try to extract text inside <title> or <h1>, otherwise default to status text
+                const titleMatch = errorText.match(/<title>(.*?)<\/title>/i);
+                const h1Match = errorText.match(/<h1>(.*?)<\/h1>/i);
+                errorText = h1Match ? h1Match[1] : (titleMatch ? titleMatch[1] : 'Server returned an HTML error page');
+            }
+
             console.error(`WooCommerce API Error (${response.status}):`, errorText);
-            throw new Error(`WooCommerce Error: ${response.statusText} - ${errorText}`);
+            throw new Error(`WooCommerce Error: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
         return response.json();
