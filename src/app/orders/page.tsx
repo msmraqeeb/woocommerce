@@ -233,7 +233,49 @@ export default function OrdersPage() {
         const subtotal = parseFloat(calculateSubtotal().toString());
         const shipping = parseFloat(editingOrderContent.shipping_total || 0);
         const discount = parseFloat(editingOrderContent.discount_total || 0);
-        return (subtotal + shipping - discount).toFixed(2);
+        return Math.max(0, subtotal + shipping - discount).toFixed(2);
+    };
+
+    const updateShippingTotal = (val: string) => {
+        if (!editingOrderContent) return;
+        const total = val || "0";
+
+        // Update shipping_lines to ensure WC persists the change
+        const shipping_lines = [...(editingOrderContent.shipping_lines || [])];
+        if (shipping_lines.length > 0) {
+            shipping_lines[0].total = total;
+        } else {
+            shipping_lines.push({
+                method_id: "flat_rate",
+                method_title: "Shipping",
+                total: total
+            });
+        }
+
+        setEditingOrderContent({
+            ...editingOrderContent,
+            shipping_total: total,
+            shipping_lines
+        });
+    };
+
+    const updateDiscountTotal = (val: string) => {
+        if (!editingOrderContent) return;
+        const total = val || "0";
+
+        // Update coupon_lines if any exist
+        const coupon_lines = [...(editingOrderContent.coupon_lines || [])];
+        if (coupon_lines.length > 0) {
+            coupon_lines[0].discount = total;
+        }
+        // Note: Creating a coupon from scratch requires a code. 
+        // We'll update top-level as well for UI responsiveness.
+
+        setEditingOrderContent({
+            ...editingOrderContent,
+            discount_total: total,
+            coupon_lines
+        });
     };
 
     const getStatusColor = (status: string) => {
@@ -513,7 +555,7 @@ export default function OrdersPage() {
                                                 <input
                                                     type="number"
                                                     value={editingOrderContent.shipping_total}
-                                                    onChange={(e) => setEditingOrderContent({ ...editingOrderContent, shipping_total: e.target.value })}
+                                                    onChange={(e) => updateShippingTotal(e.target.value)}
                                                     className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 font-mono"
                                                 />
                                             </div>
@@ -522,7 +564,7 @@ export default function OrdersPage() {
                                                 <input
                                                     type="number"
                                                     value={editingOrderContent.discount_total}
-                                                    onChange={(e) => setEditingOrderContent({ ...editingOrderContent, discount_total: e.target.value })}
+                                                    onChange={(e) => updateDiscountTotal(e.target.value)}
                                                     className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 font-mono"
                                                 />
                                             </div>
