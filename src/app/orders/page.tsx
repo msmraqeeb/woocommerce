@@ -246,7 +246,7 @@ export default function OrdersPage() {
                                                         disabled={isUpdating}
                                                         value={order.status}
                                                         onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                                                        className={`appearance-none border text-xs font-semibold rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all capitalize ${getStatusColor(order.status)} ${isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:brightness-110"}`}
+                                                        className={`appearance-none border text-xs font-semibold rounded-lg text-center pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all capitalize ${getStatusColor(order.status)} ${isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:brightness-110"}`}
                                                     >
                                                         <option className="bg-zinc-900 text-zinc-300 capitalize" value="pending">Pending</option>
                                                         <option className="bg-zinc-900 text-zinc-300 capitalize" value="processing">Processing</option>
