@@ -14,6 +14,9 @@ export default function OrdersPage() {
     const [productSearch, setProductSearch] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searchingProducts, setSearchingProducts] = useState(false);
+    const [selectingVariationProduct, setSelectingVariationProduct] = useState<any | null>(null);
+    const [productVariations, setProductVariations] = useState<any[]>([]);
+    const [loadingVariations, setLoadingVariations] = useState(false);
 
     // Pagination & Search State
     const [currentPage, setCurrentPage] = useState(1);
@@ -145,8 +148,25 @@ export default function OrdersPage() {
         }
     };
 
-    const addProductToOrder = (product: any) => {
+    const addProductToOrder = async (product: any) => {
         if (!editingOrderContent) return;
+
+        if (product.type === "variable") {
+            setSelectingVariationProduct(product);
+            setLoadingVariations(true);
+            setProductVariations([]);
+            try {
+                const res = await fetch(`/api/products/${product.id}/variations`);
+                const data = await res.json();
+                setProductVariations(Array.isArray(data) ? data : []);
+            } catch (err) {
+                console.error("Failed to fetch variations", err);
+            } finally {
+                setLoadingVariations(false);
+            }
+            return;
+        }
+
         const newItem = {
             product_id: product.id,
             name: product.name,
@@ -159,6 +179,31 @@ export default function OrdersPage() {
             ...editingOrderContent,
             line_items: [...editingOrderContent.line_items, newItem]
         });
+        setProductSearch("");
+        setSearchResults([]);
+    };
+
+    const addVariationToOrder = (variation: any) => {
+        if (!editingOrderContent || !selectingVariationProduct) return;
+
+        const attributesSuffix = variation.attributes.map((a: any) => a.option).join(" - ");
+        const newItem = {
+            product_id: selectingVariationProduct.id,
+            variation_id: variation.id,
+            name: `${selectingVariationProduct.name} - ${attributesSuffix}`,
+            quantity: 1,
+            price: variation.price,
+            total: variation.price,
+            sku: variation.sku || selectingVariationProduct.sku
+        };
+
+        setEditingOrderContent({
+            ...editingOrderContent,
+            line_items: [...editingOrderContent.line_items, newItem]
+        });
+
+        setSelectingVariationProduct(null);
+        setProductVariations([]);
         setProductSearch("");
         setSearchResults([]);
     };
@@ -578,6 +623,61 @@ export default function OrdersPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Variation Selection Dropover */}
+                        {selectingVariationProduct && (
+                            <div className="absolute inset-0 z-30 bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                                    <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-zinc-100 italic">Select Variation</h3>
+                                            <p className="text-xs text-zinc-500 uppercase tracking-widest mt-1">{selectingVariationProduct.name}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setSelectingVariationProduct(null)}
+                                            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400"
+                                        >
+                                            <X className="h-5 w-5" />
+                                        </button>
+                                    </div>
+                                    <div className="p-6 overflow-y-auto space-y-3 custom-scrollbar">
+                                        {loadingVariations ? (
+                                            <div className="flex flex-col items-center justify-center py-12 gap-3">
+                                                <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+                                                <p className="text-sm text-zinc-500 font-medium animate-pulse">Fetching variations...</p>
+                                            </div>
+                                        ) : productVariations.length === 0 ? (
+                                            <div className="text-center py-12">
+                                                <p className="text-zinc-500 italic">No variations found for this product.</p>
+                                            </div>
+                                        ) : (
+                                            productVariations.map(v => (
+                                                <button
+                                                    key={v.id}
+                                                    onClick={() => addVariationToOrder(v)}
+                                                    className="w-full text-left p-4 rounded-2xl bg-zinc-950/50 border border-zinc-800 hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all group"
+                                                >
+                                                    <div className="flex items-center justify-between gap-4">
+                                                        <div className="flex-1">
+                                                            <p className="text-zinc-100 font-bold group-hover:text-indigo-400 transition-colors">
+                                                                {v.attributes.map((a: any) => a.option).join(" / ")}
+                                                            </p>
+                                                            <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-tight">SKU: {v.sku || "N/A"}</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-lg font-black text-zinc-100">৳{v.price}</p>
+                                                            <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter">
+                                                                {v.stock_quantity !== null ? `${v.stock_quantity} in stock` : "N/A"}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="px-8 py-5 border-t border-zinc-800 bg-zinc-950/80 flex justify-between items-center backdrop-blur-md">
                             <div className="flex gap-8 text-xs text-zinc-500 uppercase font-bold tracking-widest">
