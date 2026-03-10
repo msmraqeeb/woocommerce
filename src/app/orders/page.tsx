@@ -94,12 +94,12 @@ export default function OrdersPage() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case "completed": return "bg-emerald-400/10 text-emerald-400";
-            case "processing": return "bg-blue-400/10 text-blue-400";
-            case "on-hold": return "bg-amber-400/10 text-amber-400";
-            case "cancelled": return "bg-red-400/10 text-red-400";
-            case "refunded": return "bg-zinc-400/10 text-zinc-400";
-            default: return "bg-purple-400/10 text-purple-400";
+            case "completed": return "bg-emerald-400/10 text-emerald-400 border-emerald-500/20";
+            case "processing": return "bg-blue-400/10 text-blue-400 border-blue-500/20";
+            case "on-hold": return "bg-amber-400/10 text-amber-400 border-amber-500/20";
+            case "cancelled": return "bg-red-400/10 text-red-400 border-red-500/20";
+            case "refunded": return "bg-zinc-400/10 text-zinc-400 border-zinc-500/20";
+            default: return "bg-purple-400/10 text-purple-400 border-purple-500/20";
         }
     };
 
@@ -241,28 +241,23 @@ export default function OrdersPage() {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-3">
-                                                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${getStatusColor(order.status)}`}>
-                                                    {order.status}
-                                                </span>
-
-                                                {/* Action Dropdown Alternative using Select */}
                                                 <div className="relative">
                                                     <select
                                                         disabled={isUpdating}
                                                         value={order.status}
                                                         onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                                                        className={`appearance-none bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors ${isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-zinc-700"}`}
+                                                        className={`appearance-none border text-xs font-semibold rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all capitalize ${getStatusColor(order.status)} ${isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:brightness-110"}`}
                                                     >
-                                                        <option value="pending">Pending</option>
-                                                        <option value="processing">Processing</option>
-                                                        <option value="on-hold">On Hold</option>
-                                                        <option value="completed">Completed</option>
-                                                        <option value="cancelled">Cancelled</option>
-                                                        <option value="refunded">Refunded</option>
+                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="pending">Pending</option>
+                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="processing">Processing</option>
+                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="on-hold">On Hold</option>
+                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="completed">Completed</option>
+                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="cancelled">Cancelled</option>
+                                                        <option className="bg-zinc-900 text-zinc-300 capitalize" value="refunded">Refunded</option>
                                                     </select>
                                                     {isUpdating && (
                                                         <div className="absolute right-2 top-1.5 pointer-events-none">
-                                                            <Loader2 className="h-4 w-4 text-indigo-400 animate-spin" />
+                                                            <Loader2 className="h-4 w-4 text-current opacity-70 animate-spin" />
                                                         </div>
                                                     )}
                                                 </div>
