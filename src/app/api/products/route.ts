@@ -5,9 +5,15 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const page = searchParams.get('page') || '1';
     const perPage = searchParams.get('per_page') || '20';
+    const search = searchParams.get('search') || '';
 
     try {
-        const response = await fetch(`${process.env.WOOCOMMERCE_URL}/wp-json/wc/v3/products?page=${page}&per_page=${perPage}&status=any`, {
+        let backendEndpoint = `/wp-json/wc/v3/products?page=${page}&per_page=${perPage}&status=any`;
+        if (search) {
+            backendEndpoint += `&search=${encodeURIComponent(search)}`;
+        }
+
+        const response = await fetch(`${process.env.WOOCOMMERCE_URL}${backendEndpoint}`, {
             headers: {
                 Authorization: `Basic ${btoa(`${process.env.WOOCOMMERCE_KEY}:${process.env.WOOCOMMERCE_SECRET}`)}`,
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',

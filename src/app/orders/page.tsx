@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, ShoppingCart, Truck, Loader2, CheckCircle2 } from "lucide-react";
+import { Search, ShoppingCart, Truck, Loader2, CheckCircle2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 export default function OrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
@@ -9,17 +9,44 @@ export default function OrdersPage() {
     const [error, setError] = useState<string | null>(null);
     const [updatingId, setUpdatingId] = useState<number | null>(null);
 
-    const fetchOrders = async () => {
+    // Pagination & Search State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [jumpPage, setJumpPage] = useState("1");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const perPage = 20;
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (debouncedSearch !== searchTerm) {
+                setDebouncedSearch(searchTerm);
+                setCurrentPage(1);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm, debouncedSearch]);
+
+    const fetchOrders = async (page: number, search: string = "") => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch("/api/orders");
+            let url = `/api/orders?page=${page}&per_page=${perPage}`;
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+            const res = await fetch(url);
             if (!res.ok) {
                 const errData = await res.json();
                 throw new Error(errData.error || "Failed to fetch orders");
             }
             const data = await res.json();
-            setOrders(Array.isArray(data) ? data : []);
+            setOrders(data.orders || []);
+            setTotalItems(data.totalItems || 0);
+            setTotalPages(data.totalPages || 1);
+            setCurrentPage(page);
+            setJumpPage(page.toString());
         } catch (err: any) {
             console.error(err);
             setError(err.message);
@@ -29,8 +56,18 @@ export default function OrdersPage() {
     };
 
     useEffect(() => {
-        fetchOrders();
-    }, []);
+        fetchOrders(currentPage, debouncedSearch);
+    }, [currentPage, debouncedSearch]);
+
+    const handleJumpPage = (e: React.FormEvent) => {
+        e.preventDefault();
+        const targetPage = parseInt(jumpPage, 10);
+        if (!isNaN(targetPage) && targetPage >= 1 && targetPage <= totalPages) {
+            setCurrentPage(targetPage);
+        } else {
+            setJumpPage(currentPage.toString()); // Revert if invalid
+        }
+    };
 
     const handleUpdateStatus = async (id: number, newStatus: string) => {
         setUpdatingId(id);
@@ -66,6 +103,56 @@ export default function OrdersPage() {
         }
     };
 
+    const paginationJSX = (
+        <div className="flex items-center gap-4 text-sm text-zinc-400">
+            <span className="font-medium whitespace-nowrap">
+                {totalItems.toLocaleString()} items
+            </span>
+            <div className="flex items-center gap-1">
+                <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1 || loading}
+                    className="p-1.5 rounded bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronsLeft className="h-4 w-4" />
+                </button>
+                <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1 || loading}
+                    className="p-1.5 rounded bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                <form onSubmit={handleJumpPage} className="flex items-center gap-2 mx-2">
+                    <input
+                        type="text"
+                        value={jumpPage}
+                        onChange={(e) => setJumpPage(e.target.value)}
+                        onBlur={handleJumpPage}
+                        className="w-12 text-center rounded border border-zinc-700 bg-zinc-950 px-2 py-1 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                    <span className="whitespace-nowrap">of {totalPages}</span>
+                </form>
+
+                <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages || loading}
+                    className="p-1.5 rounded bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronRight className="h-4 w-4" />
+                </button>
+                <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages || loading}
+                    className="p-1.5 rounded bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronsRight className="h-4 w-4" />
+                </button>
+            </div>
+        </div>
+    );
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -77,16 +164,27 @@ export default function OrdersPage() {
                 </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3 shadow-md">
-                <Search className="h-5 w-5 text-zinc-500" />
-                <input
-                    type="text"
-                    placeholder="Search orders (ID, Customer name)..."
-                    className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
-                />
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3 shadow-md">
+                <div className="flex w-full lg:w-auto items-center gap-3">
+                    <Search className="h-5 w-5 text-zinc-500" />
+                    <input
+                        type="text"
+                        placeholder="Search orders (ID, Customer name)..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="flex-1 lg:w-64 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
+                    />
+                </div>
+                {/* Upper Pagination */}
+                <div className="ml-auto">
+                    {paginationJSX}
+                </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-sm shadow-xl">
+            <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-sm shadow-xl relative">
+                {loading && (
+                    <div className="absolute inset-0 bg-zinc-950/20 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none" />
+                )}
                 <table className="w-full text-left text-sm text-zinc-400">
                     <thead className="border-b border-zinc-800 bg-zinc-900/80 text-xs uppercase text-zinc-300">
                         <tr>
@@ -176,6 +274,13 @@ export default function OrdersPage() {
                         )}
                     </tbody>
                 </table>
+
+                {/* Lower Pagination */}
+                {orders.length > 0 && !error && (
+                    <div className="border-t border-zinc-800 bg-zinc-900/80 px-6 py-4 flex justify-end">
+                        {paginationJSX}
+                    </div>
+                )}
             </div>
         </div>
     );

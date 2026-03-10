@@ -11,18 +11,34 @@ export default function ProductsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
-    // Pagination State
+    // Pagination & Search State
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [jumpPage, setJumpPage] = useState("1");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const perPage = 20;
 
-    const fetchProducts = async (page: number) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (debouncedSearch !== searchTerm) {
+                setDebouncedSearch(searchTerm);
+                setCurrentPage(1);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm, debouncedSearch]);
+
+    const fetchProducts = async (page: number, search: string = "") => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`/api/products?page=${page}&per_page=${perPage}`);
+            let url = `/api/products?page=${page}&per_page=${perPage}`;
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+            const res = await fetch(url);
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
                 throw new Error(errData.error || "Failed to fetch products");
@@ -42,8 +58,8 @@ export default function ProductsPage() {
     };
 
     useEffect(() => {
-        fetchProducts(currentPage);
-    }, [currentPage]);
+        fetchProducts(currentPage, debouncedSearch);
+    }, [currentPage, debouncedSearch]);
 
     const handleJumpPage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,7 +82,7 @@ export default function ProductsPage() {
             await fetch(`/api/products/${id}`, { method: "DELETE" });
         } catch (err) {
             console.error("Delete failed", err);
-            fetchProducts(currentPage); // Revert on failure
+            fetchProducts(currentPage, debouncedSearch); // Revert on failure
         }
     };
 
@@ -80,7 +96,7 @@ export default function ProductsPage() {
         setIsModalOpen(true);
     };
 
-    const PaginationControls = () => (
+    const paginationJSX = (
         <div className="flex items-center gap-4 text-sm text-zinc-400">
             <span className="font-medium whitespace-nowrap">
                 {totalItems.toLocaleString()} items
@@ -154,12 +170,14 @@ export default function ProductsPage() {
                     <input
                         type="text"
                         placeholder="Search products..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="flex-1 lg:w-64 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
                     />
                 </div>
                 {/* Upper Pagination */}
                 <div className="ml-auto">
-                    <PaginationControls />
+                    {paginationJSX}
                 </div>
             </div>
 
@@ -249,7 +267,7 @@ export default function ProductsPage() {
                 {/* Lower Pagination */}
                 {products.length > 0 && !error && (
                     <div className="border-t border-zinc-800 bg-zinc-900/80 px-6 py-4 flex justify-end">
-                        <PaginationControls />
+                        {paginationJSX}
                     </div>
                 )}
             </div>
@@ -260,7 +278,7 @@ export default function ProductsPage() {
                     onClose={() => setIsModalOpen(false)}
                     onSuccess={() => {
                         setIsModalOpen(false);
-                        fetchProducts(currentPage);
+                        fetchProducts(currentPage, debouncedSearch);
                     }}
                 />
             )}
