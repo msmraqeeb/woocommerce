@@ -28,14 +28,14 @@ export function Sidebar() {
 
             <nav className="flex flex-1 flex-col overflow-y-auto px-4 py-8 space-y-2">
                 {navigation.map((item) => {
-                    const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                    const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
                     return (
                         <Link
                             key={item.name}
                             href={item.href}
                             className={`group flex items-center gap-x-3 rounded-lg p-3 text-sm font-semibold transition-all duration-200 ${isActive
-                                    ? "bg-indigo-600/10 text-indigo-400 shadow-sm shadow-indigo-500/5"
-                                    : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
+                                ? "bg-indigo-600/10 text-indigo-400 shadow-sm shadow-indigo-500/5"
+                                : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
                                 }`}
                         >
                             <item.icon

@@ -7,17 +7,24 @@ import { ProductFormModal } from "@/components/ProductFormModal";
 export default function ProductsPage() {
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
     const fetchProducts = async () => {
         setLoading(true);
+        setError(null);
         try {
             const res = await fetch("/api/products");
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || "Failed to fetch products");
+            }
             const data = await res.json();
-            setProducts(data);
-        } catch (err) {
+            setProducts(Array.isArray(data) ? data : []);
+        } catch (err: any) {
             console.error(err);
+            setError(err.message);
         } finally {
             setLoading(false);
         }
@@ -90,7 +97,13 @@ export default function ProductsPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/50">
-                        {loading ? (
+                        {error ? (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-12 text-center text-red-400">
+                                    Error: {error}
+                                </td>
+                            </tr>
+                        ) : loading ? (
                             // Skeleton rows
                             Array.from({ length: 5 }).map((_, i) => (
                                 <tr key={i} className="animate-pulse">
@@ -98,7 +111,7 @@ export default function ProductsPage() {
                                     <td className="px-6 py-4"><div className="h-4 w-16 rounded bg-zinc-800"></div></td>
                                     <td className="px-6 py-4"><div className="h-4 w-20 rounded bg-zinc-800"></div></td>
                                     <td className="px-6 py-4"><div className="h-6 w-16 rounded-full bg-zinc-800"></div></td>
-                                    <td className="px-6 py-4text-right"><div className="h-8 w-16 rounded bg-zinc-800 ml-auto"></div></td>
+                                    <td className="px-6 py-4 text-right"><div className="h-8 w-16 rounded bg-zinc-800 ml-auto"></div></td>
                                 </tr>
                             ))
                         ) : products.length === 0 ? (
@@ -124,8 +137,8 @@ export default function ProductsPage() {
                                     <td className="px-6 py-4">৳{product.price || "0.00"}</td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${product.status === "publish"
-                                                ? "bg-emerald-400/10 text-emerald-400"
-                                                : "bg-amber-400/10 text-amber-400"
+                                            ? "bg-emerald-400/10 text-emerald-400"
+                                            : "bg-amber-400/10 text-amber-400"
                                             }`}>
                                             {product.status}
                                         </span>

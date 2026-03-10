@@ -6,16 +6,23 @@ import { Search, ShoppingCart, Truck, Loader2, CheckCircle2 } from "lucide-react
 export default function OrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [updatingId, setUpdatingId] = useState<number | null>(null);
 
     const fetchOrders = async () => {
         setLoading(true);
+        setError(null);
         try {
             const res = await fetch("/api/orders");
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || "Failed to fetch orders");
+            }
             const data = await res.json();
-            setOrders(data);
-        } catch (err) {
+            setOrders(Array.isArray(data) ? data : []);
+        } catch (err: any) {
             console.error(err);
+            setError(err.message);
         } finally {
             setLoading(false);
         }
@@ -91,7 +98,13 @@ export default function OrdersPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/50">
-                        {loading ? (
+                        {error ? (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-12 text-center text-red-400">
+                                    Error: {error}
+                                </td>
+                            </tr>
+                        ) : loading ? (
                             // Skeleton rows
                             Array.from({ length: 5 }).map((_, i) => (
                                 <tr key={i} className="animate-pulse">
@@ -99,7 +112,7 @@ export default function OrdersPage() {
                                     <td className="px-6 py-4"><div className="h-4 w-24 rounded bg-zinc-800"></div></td>
                                     <td className="px-6 py-4"><div className="h-4 w-32 rounded bg-zinc-800"></div></td>
                                     <td className="px-6 py-4"><div className="h-4 w-16 rounded bg-zinc-800"></div></td>
-                                    <td className="px-6 py-4text-right"><div className="h-8 w-32 rounded bg-zinc-800 ml-auto"></div></td>
+                                    <td className="px-6 py-4 text-right"><div className="h-8 w-32 rounded bg-zinc-800 ml-auto"></div></td>
                                 </tr>
                             ))
                         ) : orders.length === 0 ? (
