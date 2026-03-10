@@ -19,14 +19,20 @@ export async function GET() {
         });
         const totalOrders = ordersRes.headers.get('x-wp-total') || '0';
 
-        // Fetch recent orders to calculate revenue perhaps? Or use reports endpoint.
         const salesRes = await wooFetch('/reports/sales?period=month');
+        // Fetch recent orders
+        const recentOrders = await wooFetch('/orders?per_page=5');
+
+        // Fetch low stock products
+        const lowStockProducts = await wooFetch('/products?stock_status=outofstock&per_page=5');
 
         return NextResponse.json({
             totalProducts: parseInt(totalProducts, 10),
             totalOrders: parseInt(totalOrders, 10),
             monthlySales: salesRes[0]?.total_sales || "0.00",
             monthlyOrders: salesRes[0]?.total_orders || 0,
+            recentOrders: Array.isArray(recentOrders) ? recentOrders : [],
+            lowStockProducts: Array.isArray(lowStockProducts) ? lowStockProducts : [],
         });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });

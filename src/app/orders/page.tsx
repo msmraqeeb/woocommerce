@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, ShoppingCart, Truck, Loader2, CheckCircle2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Search, ShoppingCart, Truck, Loader2, CheckCircle2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, X } from "lucide-react";
 
 export default function OrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [updatingId, setUpdatingId] = useState<number | null>(null);
+    const [viewingOrder, setViewingOrder] = useState<any | null>(null);
 
     // Pagination & Search State
     const [currentPage, setCurrentPage] = useState(1);
@@ -241,6 +242,13 @@ export default function OrdersPage() {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-3">
+                                                <button
+                                                    onClick={() => setViewingOrder(order)}
+                                                    className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-indigo-400"
+                                                    title="View Items"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </button>
                                                 <div className="relative">
                                                     <select
                                                         disabled={isUpdating}
@@ -277,6 +285,68 @@ export default function OrdersPage() {
                     </div>
                 )}
             </div>
+
+            {/* Order Details Modal */}
+            {viewingOrder && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80">
+                            <div>
+                                <h2 className="text-xl font-bold text-zinc-100">Order #{viewingOrder.number}</h2>
+                                <p className="text-xs text-zinc-500 mt-1">{new Date(viewingOrder.date_created).toLocaleString()}</p>
+                            </div>
+                            <button onClick={() => setViewingOrder(null)} className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 transition-colors">
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto space-y-6">
+                            {/* Customer Info */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-2">Billing Address</h3>
+                                    <p className="text-zinc-200 text-sm leading-relaxed">
+                                        {viewingOrder.billing.first_name} {viewingOrder.billing.last_name}<br />
+                                        {viewingOrder.billing.address_1}<br />
+                                        {viewingOrder.billing.city}, {viewingOrder.billing.state} {viewingOrder.billing.postcode}<br />
+                                        {viewingOrder.billing.phone}
+                                    </p>
+                                </div>
+                                <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+                                    <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-2">Order Stats</h3>
+                                    <div className="space-y-1">
+                                        <p className="text-sm text-zinc-300 flex justify-between"><span>Status:</span> <span className="font-semibold text-indigo-400">{viewingOrder.status}</span></p>
+                                        <p className="text-sm text-zinc-300 flex justify-between"><span>Payment:</span> <span className="font-semibold text-zinc-100">{viewingOrder.payment_method_title}</span></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Item List */}
+                            <div>
+                                <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3">Line Items</h3>
+                                <div className="space-y-3">
+                                    {viewingOrder.line_items.map((item: any) => (
+                                        <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-zinc-800/40 border border-zinc-800/60">
+                                            <div className="flex-1">
+                                                <p className="text-zinc-100 font-medium text-sm">{item.name}</p>
+                                                <p className="text-xs text-zinc-500 mt-1">Quantity: {item.quantity} × {viewingOrder.currency_symbol}{item.price}</p>
+                                            </div>
+                                            <p className="font-semibold text-zinc-100 text-sm ml-4">{viewingOrder.currency_symbol}{item.total}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-900/50 flex justify-end items-center gap-4">
+                            <div className="text-right">
+                                <p className="text-xs text-zinc-500 uppercase font-semibold">Total Amount</p>
+                                <p className="text-2xl font-bold text-indigo-400">{viewingOrder.currency_symbol}{viewingOrder.total}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

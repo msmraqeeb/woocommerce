@@ -8,6 +8,8 @@ interface DashboardStats {
   totalOrders: number;
   monthlySales: string;
   monthlyOrders: number;
+  recentOrders: any[];
+  lowStockProducts: any[];
 }
 
 export default function DashboardPage() {
@@ -34,7 +36,7 @@ export default function DashboardPage() {
   const metricCards = [
     {
       name: "Total Earnings",
-      value: stats ? `৳${parseFloat(stats.monthlySales).toFixed(2)}` : "$0.00",
+      value: stats ? `৳${parseFloat(stats.monthlySales).toFixed(2)}` : "৳0.00",
       icon: DollarSign,
       color: "text-emerald-400",
       bg: "bg-emerald-400/10",
@@ -76,7 +78,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-zinc-100">Overview</h1>
         <p className="text-zinc-400 mt-2">Welcome back to your WooCommerce command center.</p>
@@ -108,14 +110,109 @@ export default function DashboardPage() {
                 <p>{card.description}</p>
               )}
             </div>
-            {/* Glossy hover effect */}
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent group-hover:animate-shimmer" />
           </div>
         ))}
       </div>
 
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* Recent Orders Table */}
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-sm overflow-hidden shadow-xl">
+          <div className="border-b border-zinc-800 bg-zinc-900/80 px-6 py-4">
+            <h2 className="font-semibold text-zinc-100 flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-indigo-400" /> Recent Orders
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-zinc-400">
+              <thead className="bg-zinc-900/50 text-xs uppercase text-zinc-500">
+                <tr>
+                  <th className="px-6 py-3 font-semibold">Order</th>
+                  <th className="px-6 py-3 font-semibold">Customer</th>
+                  <th className="px-6 py-3 font-semibold">Total</th>
+                  <th className="px-6 py-3 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/50">
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="px-6 py-4"><div className="h-4 w-12 rounded bg-zinc-800"></div></td>
+                      <td className="px-6 py-4"><div className="h-4 w-24 rounded bg-zinc-800"></div></td>
+                      <td className="px-6 py-4"><div className="h-4 w-16 rounded bg-zinc-800"></div></td>
+                      <td className="px-6 py-4"><div className="h-6 w-16 rounded bg-zinc-800"></div></td>
+                    </tr>
+                  ))
+                ) : stats?.recentOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">No recent orders.</td>
+                  </tr>
+                ) : (
+                  stats?.recentOrders.map((order) => (
+                    <tr key={order.id} className="hover:bg-zinc-800/30 transition-colors">
+                      <td className="px-6 py-4 font-medium text-zinc-200">#{order.number}</td>
+                      <td className="px-6 py-4 text-zinc-400 truncate max-w-[120px]">{order.billing.first_name} {order.billing.last_name}</td>
+                      <td className="px-6 py-4 text-zinc-100 font-medium">৳{order.total}</td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-medium capitalize text-zinc-300 ring-1 ring-inset ring-zinc-700">
+                          {order.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Inventory Alert / Recent Products */}
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-sm overflow-hidden shadow-xl">
+          <div className="border-b border-zinc-800 bg-zinc-900/80 px-6 py-4 flex justify-between items-center">
+            <h2 className="font-semibold text-zinc-100 flex items-center gap-2">
+              <Package className="h-4 w-4 text-amber-400" /> Out of Stock items
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-zinc-400">
+              <thead className="bg-zinc-900/50 text-xs uppercase text-zinc-500">
+                <tr>
+                  <th className="px-6 py-3 font-semibold">Product</th>
+                  <th className="px-6 py-3 font-semibold">SKU</th>
+                  <th className="px-6 py-3 font-semibold">Stock</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/50">
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="px-6 py-4"><div className="h-4 w-32 rounded bg-zinc-800"></div></td>
+                      <td className="px-6 py-4"><div className="h-4 w-16 rounded bg-zinc-800"></div></td>
+                      <td className="px-6 py-4"><div className="h-4 w-8 rounded bg-zinc-800"></div></td>
+                    </tr>
+                  ))
+                ) : stats?.lowStockProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-zinc-500 italic">All products are in stock.</td>
+                  </tr>
+                ) : (
+                  stats?.lowStockProducts.map((product) => (
+                    <tr key={product.id} className="hover:bg-zinc-800/30 transition-colors">
+                      <td className="px-6 py-4 font-medium text-zinc-200 truncate max-w-[200px]">{product.name}</td>
+                      <td className="px-6 py-4 text-zinc-400">{product.sku || "N/A"}</td>
+                      <td className="px-6 py-4">
+                        <span className="text-red-400 font-bold">0</span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       {/* Decorative gradient blur in background */}
-      <div className="pointer-events-none fixed inset-0 flex items-center justify-center -z-10 mix-blend-screen opacity-20">
+      <div className="pointer-events-none fixed inset-0 flex items-center justify-center -z-10 mix-blend-screen opacity-10">
         <div className="h-[40rem] w-[40rem] rounded-full bg-indigo-500 blur-[128px]" />
       </div>
     </div>
