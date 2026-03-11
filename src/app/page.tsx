@@ -72,6 +72,17 @@ export default function DashboardPage() {
     },
   ];
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed": return "bg-emerald-400/10 text-emerald-400 border-emerald-500/20";
+      case "processing": return "bg-blue-400/10 text-blue-400 border-blue-500/20";
+      case "on-hold": return "bg-amber-400/10 text-amber-400 border-amber-500/20";
+      case "cancelled": return "bg-red-400/10 text-red-400 border-red-500/20";
+      case "refunded": return "bg-zinc-400/10 text-zinc-400 border-zinc-500/20";
+      default: return "bg-purple-400/10 text-purple-400 border-purple-500/20";
+    }
+  };
+
   if (error) {
     return (
       <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-500">
@@ -157,7 +168,7 @@ export default function DashboardPage() {
                       <td className="px-6 py-4 text-zinc-400 truncate max-w-[120px]">{order.billing.first_name} {order.billing.last_name}</td>
                       <td className="px-6 py-4 text-zinc-100 font-medium">৳{order.total}</td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-medium capitalize text-zinc-300 ring-1 ring-inset ring-zinc-700">
+                        <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold capitalize transition-all duration-200 ${getStatusColor(order.status)}`}>
                           {order.status}
                         </span>
                       </td>
