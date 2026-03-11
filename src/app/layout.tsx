@@ -25,7 +25,7 @@ export default function RootLayout({
           </div>
           <footer className="border-t border-zinc-800/50 p-6 text-center text-sm text-zinc-500">
             <p>
-              &copy; {new Date().getFullYear()} Herb69. All rights reserved.
+              &copy; {new Date().getFullYear()} <a href="https://kidsparadise.com.bd/" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400 transition-colors">Kids Paradise</a>. All rights reserved.
               <span className="mx-2 text-zinc-800">|</span>
               Developed by: <a href="https://shakilmahmud.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-indigo-400 transition-colors font-medium">Shakil Mahmud</a>
             </p>
