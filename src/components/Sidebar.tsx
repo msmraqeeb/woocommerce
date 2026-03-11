@@ -21,7 +21,7 @@ export function Sidebar() {
                         <LayoutDashboard className="h-5 w-5 text-white" />
                     </div>
                     <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-zinc-100 to-zinc-400">
-                        Kid's Paradise
+                        Kids Paradise
                     </span>
                 </div>
             </div>

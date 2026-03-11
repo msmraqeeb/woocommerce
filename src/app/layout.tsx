@@ -6,7 +6,7 @@ import { Sidebar } from '@/components/Sidebar';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Kid's Paradise Dashboard",
+  title: "Kids Paradise Dashboard",
   description: 'Manage your WooCommerce store beautifully.',
 };
 
