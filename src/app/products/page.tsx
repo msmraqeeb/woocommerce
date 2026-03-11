@@ -254,7 +254,7 @@ export default function ProductsPage() {
                                             ? "bg-emerald-400/10 text-emerald-400"
                                             : "bg-amber-400/10 text-amber-400"
                                             }`}>
-                                            {product.status}
+                                            {product.status === "publish" ? "Published" : product.status.charAt(0).toUpperCase() + product.status.slice(1)}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
