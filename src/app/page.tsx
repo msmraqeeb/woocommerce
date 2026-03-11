@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DollarSign, Package, ShoppingCart, TrendingUp } from "lucide-react";
+import { Package, ShoppingCart, TrendingUp } from "lucide-react";
 
 interface DashboardStats {
   totalProducts: number;
@@ -11,6 +11,10 @@ interface DashboardStats {
   recentOrders: any[];
   lowStockProducts: any[];
 }
+
+const TakaSign = ({ className }: { className?: string }) => (
+  <span className={className} style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>৳</span>
+);
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -37,7 +41,7 @@ export default function DashboardPage() {
     {
       name: "Total Earnings",
       value: stats ? `৳${parseFloat(stats.monthlySales).toFixed(2)}` : "৳0.00",
-      icon: DollarSign,
+      icon: TakaSign,
       color: "text-emerald-400",
       bg: "bg-emerald-400/10",
       description: "Sales this month",
