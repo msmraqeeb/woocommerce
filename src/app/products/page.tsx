@@ -99,25 +99,6 @@ export default function ProductsPage() {
         }
     };
 
-    const handleStockStatusChange = async (id: number, newStockStatus: string) => {
-        // Optimistic UI update
-        const originalProducts = [...products];
-        setProducts(products.map((p) => p.id === id ? { ...p, stock_status: newStockStatus } : p));
-
-        try {
-            const res = await fetch(`/api/products/${id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ stock_status: newStockStatus })
-            });
-            if (!res.ok) throw new Error("Failed to update stock status");
-        } catch (err) {
-            console.error("Stock update failed", err);
-            setProducts(originalProducts); // Revert on failure
-            alert("Failed to update stock status.");
-        }
-    };
-
     const handleEdit = (product: any) => {
         setEditingProduct(product);
         setIsModalOpen(true);
@@ -263,7 +244,6 @@ export default function ProductsPage() {
                             <th className="px-6 py-4 font-semibold">Product</th>
                             <th className="px-6 py-4 font-semibold">SKU</th>
                             <th className="px-6 py-4 font-semibold text-center">Quantity</th>
-                            <th className="px-6 py-4 font-semibold text-center">Stock Status</th>
                             <th className="px-6 py-4 font-semibold">Price</th>
                             <th className="px-6 py-4 font-semibold">Status</th>
                             <th className="px-6 py-4 font-semibold text-right">Actions</th>
@@ -272,7 +252,7 @@ export default function ProductsPage() {
                     <tbody className="divide-y divide-zinc-800/50">
                         {error ? (
                             <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center text-red-400">
+                                <td colSpan={6} className="px-6 py-12 text-center text-red-400">
                                     Error: {error}
                                 </td>
                             </tr>
@@ -283,7 +263,6 @@ export default function ProductsPage() {
                                     <td className="px-6 py-4"><div className="h-5 w-48 rounded bg-zinc-800"></div></td>
                                     <td className="px-6 py-4"><div className="h-4 w-16 rounded bg-zinc-800"></div></td>
                                     <td className="px-6 py-4 text-center"><div className="h-4 w-10 rounded bg-zinc-800 mx-auto"></div></td>
-                                    <td className="px-6 py-4 text-center"><div className="h-6 w-24 rounded bg-zinc-800 mx-auto"></div></td>
                                     <td className="px-6 py-4"><div className="h-4 w-20 rounded bg-zinc-800"></div></td>
                                     <td className="px-6 py-4"><div className="h-6 w-16 rounded-full bg-zinc-800"></div></td>
                                     <td className="px-6 py-4 text-right"><div className="h-8 w-16 rounded bg-zinc-800 ml-auto"></div></td>
@@ -291,7 +270,7 @@ export default function ProductsPage() {
                             ))
                         ) : products.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center text-zinc-500">
+                                <td colSpan={6} className="px-6 py-12 text-center text-zinc-500">
                                     No products found. Add one to get started.
                                 </td>
                             </tr>
@@ -320,27 +299,6 @@ export default function ProductsPage() {
                                             ) : (
                                                 <span className="text-zinc-500">—</span>
                                             )
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        {product.type === "variable" ? (
-                                            <span className="text-zinc-500 text-xs italic">N/A</span>
-                                        ) : (
-                                            <select
-                                                value={product.stock_status || "instock"}
-                                                onChange={(e) => handleStockStatusChange(product.id, e.target.value)}
-                                                className={`text-xs font-semibold rounded-lg px-2 py-1 outline-none border focus:ring-1 cursor-pointer appearance-none text-center ${
-                                                    product.stock_status === "instock"
-                                                        ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20"
-                                                        : product.stock_status === "outofstock"
-                                                        ? "bg-red-400/10 text-red-400 border-red-400/20"
-                                                        : "bg-amber-400/10 text-amber-400 border-amber-400/20"
-                                                }`}
-                                            >
-                                                <option value="instock" className="bg-zinc-900 text-emerald-400">In Stock</option>
-                                                <option value="outofstock" className="bg-zinc-900 text-red-400">Out of Stock</option>
-                                                <option value="onbackorder" className="bg-zinc-900 text-amber-400">On Backorder</option>
-                                            </select>
                                         )}
                                     </td>
                                     <td className="px-6 py-4">৳{product.price || "0.00"}</td>
