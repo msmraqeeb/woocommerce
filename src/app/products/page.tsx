@@ -21,6 +21,7 @@ export default function ProductsPage() {
     const [sortBy, setSortBy] = useState("date-desc");
     const [filterStatus, setFilterStatus] = useState("any");
     const [filterStock, setFilterStock] = useState("");
+    const [focusValue, setFocusValue] = useState<any>(null);
     const perPage = 20;
 
     useEffect(() => {
@@ -107,6 +108,35 @@ export default function ProductsPage() {
     const handleCreate = () => {
         setEditingProduct(null);
         setIsModalOpen(true);
+    };
+
+    const handleLiveUpdate = async (id: number, field: string, value: any) => {
+        if (value === focusValue) return; // No change
+
+        try {
+            let updatePayload: any = {};
+            if (field === 'stock_quantity') {
+                updatePayload = { manage_stock: true, stock_quantity: value === "" ? 0 : Number(value) };
+            } else if (field === 'regular_price') {
+                updatePayload = { regular_price: String(value) };
+            } else {
+                updatePayload = { [field]: value };
+            }
+
+            const res = await fetch(`/api/products/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatePayload),
+            });
+            
+            if (!res.ok) throw new Error("Failed to update");
+            
+            const updatedProduct = await res.json();
+            setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
+        } catch (err) {
+            console.error("Live update failed", err);
+            fetchProducts(currentPage, debouncedSearch); // Revert on failure
+        }
     };
 
     const paginationJSX = (
@@ -285,23 +315,64 @@ export default function ProductsPage() {
                                                 <Package className="h-5 w-5 text-zinc-500" />
                                             </div>
                                         )}
-                                        <span className="truncate max-w-[200px]">{product.name}</span>
+                                        <input
+                                            type="text"
+                                            value={product.name}
+                                            onFocus={(e) => setFocusValue(e.target.value)}
+                                            onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, name: e.target.value } : p))}
+                                            onBlur={(e) => handleLiveUpdate(product.id, 'name', e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                            className="bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none truncate w-[150px] sm:w-[200px]"
+                                        />
                                     </td>
-                                    <td className="px-6 py-4">{product.sku || "N/A"}</td>
+                                    <td className="px-6 py-4">
+                                        <input
+                                            type="text"
+                                            value={product.sku || ""}
+                                            placeholder="N/A"
+                                            onFocus={(e) => setFocusValue(e.target.value)}
+                                            onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, sku: e.target.value } : p))}
+                                            onBlur={(e) => handleLiveUpdate(product.id, 'sku', e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                            className="w-24 bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none text-zinc-300"
+                                        />
+                                    </td>
                                     <td className="px-6 py-4 text-center font-medium">
                                         {product.type === "variable" ? (
-                                            <span className="text-zinc-500 text-xs italic">Variable</span>
+                                            <span className="text-zinc-500 text-xs italic cursor-help" title="Variable products manage stock at the variation level">Variable</span>
                                         ) : (
-                                            product.manage_stock ? (
-                                                <span className={product.stock_quantity > 0 ? "text-zinc-100" : "text-red-400 font-bold"}>
-                                                    {product.stock_quantity ?? 0}
-                                                </span>
-                                            ) : (
-                                                <span className="text-zinc-500">—</span>
-                                            )
+                                            <input
+                                                type="number"
+                                                value={product.stock_quantity ?? ""}
+                                                placeholder="—"
+                                                onFocus={(e) => setFocusValue(e.target.value)}
+                                                onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock_quantity: e.target.value } : p))}
+                                                onBlur={(e) => handleLiveUpdate(product.id, 'stock_quantity', e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                                className={`w-16 text-center bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none ${product.manage_stock && product.stock_quantity <= 0 ? "text-red-400 font-bold" : "text-zinc-100"}`}
+                                            />
                                         )}
                                     </td>
-                                    <td className="px-6 py-4">৳{product.price || "0.00"}</td>
+                                    <td className="px-6 py-4">
+                                        {product.type === "variable" ? (
+                                            <span>৳{product.price || "0.00"}</span>
+                                        ) : (
+                                            <div className="flex items-center gap-1">
+                                                <span>৳</span>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={product.regular_price ?? product.price ?? ""}
+                                                    placeholder="0.00"
+                                                    onFocus={(e) => setFocusValue(e.target.value)}
+                                                    onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, regular_price: e.target.value, price: e.target.value } : p))}
+                                                    onBlur={(e) => handleLiveUpdate(product.id, 'regular_price', e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                                    className="w-20 bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none"
+                                                />
+                                            </div>
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${product.status === "publish"
                                             ? "bg-emerald-400/10 text-emerald-400"
