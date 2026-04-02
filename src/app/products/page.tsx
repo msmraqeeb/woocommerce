@@ -18,6 +18,9 @@ export default function ProductsPage() {
     const [jumpPage, setJumpPage] = useState("1");
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [sortBy, setSortBy] = useState("date-desc");
+    const [filterStatus, setFilterStatus] = useState("any");
+    const [filterStock, setFilterStock] = useState("");
     const perPage = 20;
 
     useEffect(() => {
@@ -37,6 +40,16 @@ export default function ProductsPage() {
             let url = `/api/products?page=${page}&per_page=${perPage}`;
             if (search) {
                 url += `&search=${encodeURIComponent(search)}`;
+            }
+            if (sortBy) {
+                const [orderby, order] = sortBy.split('-');
+                url += `&orderby=${orderby}&order=${order}`;
+            }
+            if (filterStatus) {
+                url += `&status=${filterStatus}`;
+            }
+            if (filterStock) {
+                url += `&stock_status=${filterStock}`;
             }
             const res = await fetch(url);
             if (!res.ok) {
@@ -59,7 +72,7 @@ export default function ProductsPage() {
 
     useEffect(() => {
         fetchProducts(currentPage, debouncedSearch);
-    }, [currentPage, debouncedSearch]);
+    }, [currentPage, debouncedSearch, sortBy, filterStatus, filterStock]);
 
     const handleJumpPage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -164,19 +177,59 @@ export default function ProductsPage() {
                 </button>
             </div>
 
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3 shadow-md">
-                <div className="flex w-full lg:w-auto items-center gap-3">
-                    <Search className="h-5 w-5 text-zinc-500" />
-                    <input
-                        type="text"
-                        placeholder="Search products..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="flex-1 lg:w-64 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
-                    />
+            <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3 shadow-md">
+                <div className="flex flex-col sm:flex-row w-full xl:w-auto items-start sm:items-center gap-4">
+                    <div className="flex items-center gap-3 w-full sm:w-auto bg-zinc-950/50 border border-zinc-800 px-3 py-1.5 rounded-lg">
+                        <Search className="h-4 w-4 text-zinc-400" />
+                        <input
+                            type="text"
+                            placeholder="Search products..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="flex-1 sm:w-48 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
+                        />
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <select 
+                            value={filterStatus}
+                            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+                            className="bg-zinc-950 border border-zinc-700 text-sm rounded-lg px-3 py-1.5 text-zinc-300 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer"
+                        >
+                            <option value="any">All Status</option>
+                            <option value="publish">Published</option>
+                            <option value="draft">Draft</option>
+                            <option value="pending">Pending</option>
+                            <option value="private">Private</option>
+                        </select>
+
+                        <select 
+                            value={filterStock}
+                            onChange={(e) => { setFilterStock(e.target.value); setCurrentPage(1); }}
+                            className="bg-zinc-950 border border-zinc-700 text-sm rounded-lg px-3 py-1.5 text-zinc-300 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer"
+                        >
+                            <option value="">All Stock</option>
+                            <option value="instock">In Stock</option>
+                            <option value="outofstock">Out of Stock</option>
+                            <option value="onbackorder">On Backorder</option>
+                        </select>
+
+                        <select 
+                            value={sortBy}
+                            onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
+                            className="bg-zinc-950 border border-zinc-700 text-sm rounded-lg px-3 py-1.5 text-zinc-300 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer"
+                        >
+                            <option value="date-desc">Newest First</option>
+                            <option value="date-asc">Oldest First</option>
+                            <option value="title-asc">Name (A-Z)</option>
+                            <option value="title-desc">Name (Z-A)</option>
+                            <option value="price-asc">Price (Low to High)</option>
+                            <option value="price-desc">Price (High to Low)</option>
+                        </select>
+                    </div>
                 </div>
                 {/* Upper Pagination */}
-                <div className="ml-auto">
+                <div className="ml-auto flex shrink-0">
                     {paginationJSX}
                 </div>
             </div>

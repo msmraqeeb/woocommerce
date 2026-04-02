@@ -2,13 +2,20 @@ import { NextResponse } from 'next/server';
 import { wooFetch } from '@/lib/woocommerce';
 
 export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url);
+    const searchParams = new URL(request.url).searchParams;
     const page = searchParams.get('page') || '1';
     const perPage = searchParams.get('per_page') || '20';
     const search = searchParams.get('search') || '';
+    const orderby = searchParams.get('orderby') || 'date';
+    const order = searchParams.get('order') || 'desc';
+    const status = searchParams.get('status') || 'any';
+    const stockStatus = searchParams.get('stock_status') || '';
 
     try {
-        let backendEndpoint = `/wp-json/wc/v3/products?page=${page}&per_page=${perPage}&status=any`;
+        let backendEndpoint = `/wp-json/wc/v3/products?page=${page}&per_page=${perPage}&status=${status}&orderby=${orderby}&order=${order}`;
+        if (stockStatus) {
+            backendEndpoint += `&stock_status=${stockStatus}`;
+        }
 
         let products: any[] = [];
         let totalItems = 0;
