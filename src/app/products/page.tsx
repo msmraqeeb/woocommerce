@@ -268,140 +268,142 @@ export default function ProductsPage() {
                 {loading && (
                     <div className="absolute inset-0 bg-zinc-950/20 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none" />
                 )}
-                <table className="w-full text-left text-sm text-zinc-400">
-                    <thead className="border-b border-zinc-800 bg-zinc-900/80 text-xs uppercase text-zinc-300">
-                        <tr>
-                            <th className="px-6 py-4 font-semibold">Product</th>
-                            <th className="px-6 py-4 font-semibold">SKU</th>
-                            <th className="px-6 py-4 font-semibold text-center">Quantity</th>
-                            <th className="px-6 py-4 font-semibold">Price</th>
-                            <th className="px-6 py-4 font-semibold">Status</th>
-                            <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-800/50">
-                        {error ? (
+                <div className="overflow-x-auto overflow-y-hidden">
+                    <table className="w-full text-left text-sm text-zinc-400 min-w-[800px]">
+                        <thead className="border-b border-zinc-800 bg-zinc-900/80 text-xs uppercase text-zinc-300">
                             <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center text-red-400">
-                                    Error: {error}
-                                </td>
+                                <th className="px-6 py-4 font-semibold">Product</th>
+                                <th className="px-6 py-4 font-semibold">SKU</th>
+                                <th className="px-6 py-4 font-semibold text-center">Quantity</th>
+                                <th className="px-6 py-4 font-semibold">Price</th>
+                                <th className="px-6 py-4 font-semibold">Status</th>
+                                <th className="px-6 py-4 font-semibold text-right">Actions</th>
                             </tr>
-                        ) : loading && products.length === 0 ? (
-                            // Skeleton rows
-                            Array.from({ length: 5 }).map((_, i) => (
-                                <tr key={i} className="animate-pulse">
-                                    <td className="px-6 py-4"><div className="h-5 w-48 rounded bg-zinc-800"></div></td>
-                                    <td className="px-6 py-4"><div className="h-4 w-16 rounded bg-zinc-800"></div></td>
-                                    <td className="px-6 py-4 text-center"><div className="h-4 w-10 rounded bg-zinc-800 mx-auto"></div></td>
-                                    <td className="px-6 py-4"><div className="h-4 w-20 rounded bg-zinc-800"></div></td>
-                                    <td className="px-6 py-4"><div className="h-6 w-16 rounded-full bg-zinc-800"></div></td>
-                                    <td className="px-6 py-4 text-right"><div className="h-8 w-16 rounded bg-zinc-800 ml-auto"></div></td>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800/50">
+                            {error ? (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-12 text-center text-red-400">
+                                        Error: {error}
+                                    </td>
                                 </tr>
-                            ))
-                        ) : products.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center text-zinc-500">
-                                    No products found. Add one to get started.
-                                </td>
-                            </tr>
-                        ) : (
-                            products.map((product) => (
-                                <tr key={product.id} className="transition-colors hover:bg-zinc-800/30">
-                                    <td className="px-6 py-4 font-medium text-zinc-100 flex items-center gap-3">
-                                        {product.images?.[0]?.src ? (
-                                            <img src={product.images[0].src} alt={product.name} className="h-10 w-10 min-w-10 rounded-lg object-cover bg-zinc-800" />
-                                        ) : (
-                                            <div className="h-10 w-10 rounded-lg bg-zinc-800 flex items-center justify-center">
-                                                <Package className="h-5 w-5 text-zinc-500" />
-                                            </div>
-                                        )}
-                                        <input
-                                            type="text"
-                                            value={product.name}
-                                            onFocus={(e) => setFocusValue(e.target.value)}
-                                            onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, name: e.target.value } : p))}
-                                            onBlur={(e) => handleLiveUpdate(product.id, 'name', e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                                            className="bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none truncate w-[150px] sm:w-[200px]"
-                                        />
+                            ) : loading && products.length === 0 ? (
+                                // Skeleton rows
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <tr key={i} className="animate-pulse">
+                                        <td className="px-6 py-4"><div className="h-5 w-48 rounded bg-zinc-800"></div></td>
+                                        <td className="px-6 py-4"><div className="h-4 w-16 rounded bg-zinc-800"></div></td>
+                                        <td className="px-6 py-4 text-center"><div className="h-4 w-10 rounded bg-zinc-800 mx-auto"></div></td>
+                                        <td className="px-6 py-4"><div className="h-4 w-20 rounded bg-zinc-800"></div></td>
+                                        <td className="px-6 py-4"><div className="h-6 w-16 rounded-full bg-zinc-800"></div></td>
+                                        <td className="px-6 py-4 text-right"><div className="h-8 w-16 rounded bg-zinc-800 ml-auto"></div></td>
+                                    </tr>
+                                ))
+                            ) : products.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-12 text-center text-zinc-500">
+                                        No products found. Add one to get started.
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <input
-                                            type="text"
-                                            value={product.sku || ""}
-                                            placeholder="N/A"
-                                            onFocus={(e) => setFocusValue(e.target.value)}
-                                            onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, sku: e.target.value } : p))}
-                                            onBlur={(e) => handleLiveUpdate(product.id, 'sku', e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                                            className="w-24 bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none text-zinc-300"
-                                        />
-                                    </td>
-                                    <td className="px-6 py-4 text-center font-medium">
-                                        {product.type === "variable" ? (
-                                            <span className="text-zinc-500 text-xs italic cursor-help" title="Variable products manage stock at the variation level">Variable</span>
-                                        ) : (
+                                </tr>
+                            ) : (
+                                products.map((product) => (
+                                    <tr key={product.id} className="transition-colors hover:bg-zinc-800/30">
+                                        <td className="px-6 py-4 font-medium text-zinc-100 flex items-center gap-3">
+                                            {product.images?.[0]?.src ? (
+                                                <img src={product.images[0].src} alt={product.name} className="h-10 w-10 min-w-10 rounded-lg object-cover bg-zinc-800" />
+                                            ) : (
+                                                <div className="h-10 w-10 rounded-lg bg-zinc-800 flex items-center justify-center">
+                                                    <Package className="h-5 w-5 text-zinc-500" />
+                                                </div>
+                                            )}
                                             <input
-                                                type="number"
-                                                value={product.stock_quantity ?? ""}
-                                                placeholder="—"
+                                                type="text"
+                                                value={product.name}
                                                 onFocus={(e) => setFocusValue(e.target.value)}
-                                                onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock_quantity: e.target.value } : p))}
-                                                onBlur={(e) => handleLiveUpdate(product.id, 'stock_quantity', e.target.value)}
+                                                onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, name: e.target.value } : p))}
+                                                onBlur={(e) => handleLiveUpdate(product.id, 'name', e.target.value)}
                                                 onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                                                className={`w-16 text-center bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none ${product.manage_stock && product.stock_quantity <= 0 ? "text-red-400 font-bold" : "text-zinc-100"}`}
+                                                className="bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none truncate w-[150px] sm:w-[200px]"
                                             />
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {product.type === "variable" ? (
-                                            <span>৳{product.price || "0.00"}</span>
-                                        ) : (
-                                            <div className="flex items-center gap-1">
-                                                <span>৳</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <input
+                                                type="text"
+                                                value={product.sku || ""}
+                                                placeholder="N/A"
+                                                onFocus={(e) => setFocusValue(e.target.value)}
+                                                onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, sku: e.target.value } : p))}
+                                                onBlur={(e) => handleLiveUpdate(product.id, 'sku', e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                                className="w-24 bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none text-zinc-300"
+                                            />
+                                        </td>
+                                        <td className="px-6 py-4 text-center font-medium">
+                                            {product.type === "variable" ? (
+                                                <span className="text-zinc-500 text-xs italic cursor-help" title="Variable products manage stock at the variation level">Variable</span>
+                                            ) : (
                                                 <input
                                                     type="number"
-                                                    step="0.01"
-                                                    value={product.regular_price ?? product.price ?? ""}
-                                                    placeholder="0.00"
+                                                    value={product.stock_quantity ?? ""}
+                                                    placeholder="—"
                                                     onFocus={(e) => setFocusValue(e.target.value)}
-                                                    onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, regular_price: e.target.value, price: e.target.value } : p))}
-                                                    onBlur={(e) => handleLiveUpdate(product.id, 'regular_price', e.target.value)}
+                                                    onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock_quantity: e.target.value } : p))}
+                                                    onBlur={(e) => handleLiveUpdate(product.id, 'stock_quantity', e.target.value)}
                                                     onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                                                    className="w-20 bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none"
+                                                    className={`w-16 text-center bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none ${product.manage_stock && product.stock_quantity <= 0 ? "text-red-400 font-bold" : "text-zinc-100"}`}
                                                 />
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {product.type === "variable" ? (
+                                                <span>৳{product.price || "0.00"}</span>
+                                            ) : (
+                                                <div className="flex items-center gap-1">
+                                                    <span>৳</span>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={product.regular_price ?? product.price ?? ""}
+                                                        placeholder="0.00"
+                                                        onFocus={(e) => setFocusValue(e.target.value)}
+                                                        onChange={(e) => setProducts(prev => prev.map(p => p.id === product.id ? { ...p, regular_price: e.target.value, price: e.target.value } : p))}
+                                                        onBlur={(e) => handleLiveUpdate(product.id, 'regular_price', e.target.value)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                                        className="w-20 bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-indigo-500 focus:outline-none"
+                                                    />
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${product.status === "publish"
+                                                ? "bg-emerald-400/10 text-emerald-400"
+                                                : "bg-amber-400/10 text-amber-400"
+                                                }`}>
+                                                {product.status === "publish" ? "Published" : product.status.charAt(0).toUpperCase() + product.status.slice(1)}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() => handleEdit(product)}
+                                                    className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-indigo-400"
+                                                >
+                                                    <Edit2 className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(product.id)}
+                                                    className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-red-400"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
                                             </div>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${product.status === "publish"
-                                            ? "bg-emerald-400/10 text-emerald-400"
-                                            : "bg-amber-400/10 text-amber-400"
-                                            }`}>
-                                            {product.status === "publish" ? "Published" : product.status.charAt(0).toUpperCase() + product.status.slice(1)}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <button
-                                                onClick={() => handleEdit(product)}
-                                                className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-indigo-400"
-                                            >
-                                                <Edit2 className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(product.id)}
-                                                className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-red-400"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
 
                 {/* Lower Pagination */}
                 {products.length > 0 && !error && (

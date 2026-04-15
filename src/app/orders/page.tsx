@@ -371,96 +371,98 @@ export default function OrdersPage() {
                 {loading && (
                     <div className="absolute inset-0 bg-zinc-950/20 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none" />
                 )}
-                <table className="w-full text-left text-sm text-zinc-400">
-                    <thead className="border-b border-zinc-800 bg-zinc-900/80 text-xs uppercase text-zinc-300">
-                        <tr>
-                            <th className="px-6 py-4 font-semibold">Order</th>
-                            <th className="px-6 py-4 font-semibold">Date</th>
-                            <th className="px-6 py-4 font-semibold">Customer</th>
-                            <th className="px-6 py-4 font-semibold">Total</th>
-                            <th className="px-6 py-4 font-semibold text-right">Status Action</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-800/50">
-                        {error ? (
+                <div className="overflow-x-auto overflow-y-hidden">
+                    <table className="w-full text-left text-sm text-zinc-400 min-w-[700px]">
+                        <thead className="border-b border-zinc-800 bg-zinc-900/80 text-xs uppercase text-zinc-300">
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-red-400">
-                                    Error: {error}
-                                </td>
+                                <th className="px-6 py-4 font-semibold">Order</th>
+                                <th className="px-6 py-4 font-semibold">Date</th>
+                                <th className="px-6 py-4 font-semibold">Customer</th>
+                                <th className="px-6 py-4 font-semibold">Total</th>
+                                <th className="px-6 py-4 font-semibold text-right">Status Action</th>
                             </tr>
-                        ) : loading ? (
-                            Array.from({ length: 5 }).map((_, i) => (
-                                <tr key={i} className="animate-pulse">
-                                    <td className="px-6 py-4"><div className="h-5 w-16 rounded bg-zinc-800"></div></td>
-                                    <td className="px-6 py-4"><div className="h-4 w-24 rounded bg-zinc-800"></div></td>
-                                    <td className="px-6 py-4"><div className="h-4 w-32 rounded bg-zinc-800"></div></td>
-                                    <td className="px-6 py-4"><div className="h-4 w-16 rounded bg-zinc-800"></div></td>
-                                    <td className="px-6 py-4 text-right"><div className="h-8 w-32 rounded bg-zinc-800 ml-auto"></div></td>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800/50">
+                            {error ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-red-400">
+                                        Error: {error}
+                                    </td>
                                 </tr>
-                            ))
-                        ) : orders.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
-                                    No recent orders found.
-                                </td>
-                            </tr>
-                        ) : (
-                            orders.map((order) => {
-                                const isUpdating = updatingId === order.id;
-                                return (
-                                    <tr key={order.id} className="transition-colors hover:bg-zinc-800/30">
-                                        <td className="px-6 py-4 font-medium text-zinc-100 flex items-center gap-2">
-                                            <span className="text-zinc-500">#</span>{order.number}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {new Date(order.date_created).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-zinc-200">{order.billing.first_name} {order.billing.last_name}</span>
-                                                <span className="text-xs text-zinc-500">{order.billing.email}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-zinc-300">
-                                            {order.currency_symbol}{order.total}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-3">
-                                                <button
-                                                    onClick={() => setViewingOrder(order)}
-                                                    className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-indigo-400"
-                                                    title="Edit Order"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </button>
-                                                <div className="relative">
-                                                    <select
-                                                        disabled={isUpdating}
-                                                        value={order.status}
-                                                        onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                                                        className={`appearance-none border text-xs font-semibold rounded-lg text-center pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all capitalize ${getStatusColor(order.status)} ${isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:brightness-110"}`}
-                                                    >
-                                                        <option value="pending">Pending</option>
-                                                        <option value="processing">Processing</option>
-                                                        <option value="on-hold">On Hold</option>
-                                                        <option value="completed">Completed</option>
-                                                        <option value="cancelled">Cancelled</option>
-                                                        <option value="refunded">Refunded</option>
-                                                    </select>
-                                                    {isUpdating && (
-                                                        <div className="absolute right-2 top-1.5 pointer-events-none">
-                                                            <Loader2 className="h-4 w-4 text-current opacity-70 animate-spin" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </td>
+                            ) : loading ? (
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <tr key={i} className="animate-pulse">
+                                        <td className="px-6 py-4"><div className="h-5 w-16 rounded bg-zinc-800"></div></td>
+                                        <td className="px-6 py-4"><div className="h-4 w-24 rounded bg-zinc-800"></div></td>
+                                        <td className="px-6 py-4"><div className="h-4 w-32 rounded bg-zinc-800"></div></td>
+                                        <td className="px-6 py-4"><div className="h-4 w-16 rounded bg-zinc-800"></div></td>
+                                        <td className="px-6 py-4 text-right"><div className="h-8 w-32 rounded bg-zinc-800 ml-auto"></div></td>
                                     </tr>
-                                );
-                            })
-                        )}
-                    </tbody>
-                </table>
+                                ))
+                            ) : orders.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
+                                        No recent orders found.
+                                    </td>
+                                </tr>
+                            ) : (
+                                orders.map((order) => {
+                                    const isUpdating = updatingId === order.id;
+                                    return (
+                                        <tr key={order.id} className="transition-colors hover:bg-zinc-800/30">
+                                            <td className="px-6 py-4 font-medium text-zinc-100 flex items-center gap-2">
+                                                <span className="text-zinc-500">#</span>{order.number}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {new Date(order.date_created).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col">
+                                                    <span className="text-zinc-200">{order.billing.first_name} {order.billing.last_name}</span>
+                                                    <span className="text-xs text-zinc-500">{order.billing.email}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 font-medium text-zinc-300">
+                                                {order.currency_symbol}{order.total}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-3">
+                                                    <button
+                                                        onClick={() => setViewingOrder(order)}
+                                                        className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-indigo-400"
+                                                        title="Edit Order"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </button>
+                                                    <div className="relative">
+                                                        <select
+                                                            disabled={isUpdating}
+                                                            value={order.status}
+                                                            onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                                                            className={`appearance-none border text-xs font-semibold rounded-lg text-center pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all capitalize ${getStatusColor(order.status)} ${isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:brightness-110"}`}
+                                                        >
+                                                            <option value="pending">Pending</option>
+                                                            <option value="processing">Processing</option>
+                                                            <option value="on-hold">On Hold</option>
+                                                            <option value="completed">Completed</option>
+                                                            <option value="cancelled">Cancelled</option>
+                                                            <option value="refunded">Refunded</option>
+                                                        </select>
+                                                        {isUpdating && (
+                                                            <div className="absolute right-2 top-1.5 pointer-events-none">
+                                                                <Loader2 className="h-4 w-4 text-current opacity-70 animate-spin" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                </div>
 
                 {/* Lower Pagination */}
                 {orders.length > 0 && !error && (
@@ -472,21 +474,21 @@ export default function OrdersPage() {
 
             {/* Order Editor Modal */}
             {viewingOrder && editingOrderContent && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-200">
-                        <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-zinc-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-200 relative">
+                        <div className="px-4 sm:px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80 sticky top-0 z-10">
                             <div>
-                                <h2 className="text-xl font-bold text-zinc-100 italic">Edit Order #{editingOrderContent.number}</h2>
-                                <p className="text-xs text-zinc-500 mt-1 uppercase tracking-widest">{new Date(editingOrderContent.date_created).toLocaleString()}</p>
+                                <h2 className="text-lg sm:text-xl font-bold text-zinc-100 italic line-clamp-1">Edit Order #{editingOrderContent.number}</h2>
+                                <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-widest">{new Date(editingOrderContent.date_created).toLocaleString()}</p>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 sm:gap-3">
                                 <button
                                     onClick={handleSaveOrder}
                                     disabled={isSavingOrder}
-                                    className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 transition-all hover:bg-indigo-500 disabled:opacity-50"
+                                    className="flex items-center gap-2 rounded-xl bg-indigo-600 px-3 sm:px-5 py-2 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 transition-all hover:bg-indigo-500 disabled:opacity-50"
                                 >
                                     {isSavingOrder ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                    Save Changes
+                                    <span className="hidden xs:inline">Save</span>
                                 </button>
                                 <button onClick={() => setViewingOrder(null)} className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 transition-colors">
                                     <X className="h-5 w-5" />
@@ -494,14 +496,14 @@ export default function OrdersPage() {
                             </div>
                         </div>
 
-                        <div className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="p-4 sm:p-6 overflow-y-auto space-y-6 sm:space-y-8 custom-scrollbar">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
                                 <div className="lg:col-span-2 space-y-6">
-                                    <div className="bg-zinc-950/30 p-5 rounded-2xl border border-zinc-800/50 space-y-4">
-                                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800 pb-2 flex items-center gap-2">
+                                    <div className="bg-zinc-950/30 p-4 sm:p-5 rounded-2xl border border-zinc-800/50 space-y-4">
+                                        <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800 pb-2 flex items-center gap-2">
                                             <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" /> Billing Information
                                         </h3>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="space-y-1">
                                                 <label className="text-[10px] text-zinc-500 uppercase font-bold">First Name</label>
                                                 <input
@@ -518,7 +520,7 @@ export default function OrdersPage() {
                                                     className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
                                                 />
                                             </div>
-                                            <div className="col-span-2 space-y-1">
+                                            <div className="sm:col-span-2 space-y-1">
                                                 <label className="text-[10px] text-zinc-500 uppercase font-bold">Address</label>
                                                 <input
                                                     value={editingOrderContent.billing.address_1}
@@ -547,8 +549,8 @@ export default function OrdersPage() {
                                 </div>
 
                                 <div className="space-y-6">
-                                    <div className="bg-zinc-950/30 p-5 rounded-2xl border border-zinc-800/50 space-y-4 shadow-inner">
-                                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800 pb-2">Costs & Adjustments</h3>
+                                    <div className="bg-zinc-950/30 p-4 sm:p-5 rounded-2xl border border-zinc-800/50 space-y-4 shadow-inner">
+                                        <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800 pb-2">Costs & Adjustments</h3>
                                         <div className="space-y-4">
                                             <div className="space-y-1">
                                                 <label className="text-[10px] text-zinc-500 uppercase font-bold">Shipping Cost (৳)</label>
@@ -573,7 +575,7 @@ export default function OrdersPage() {
                                                 <select
                                                     value={editingOrderContent.status}
                                                     onChange={(e) => setEditingOrderContent({ ...editingOrderContent, status: e.target.value })}
-                                                    className={`w-full appearance-none border border-zinc-800 rounded-lg px-3 py-2 text-sm font-semibold capitalize bg-zinc-900 text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                                                    className="w-full appearance-none border border-zinc-800 rounded-lg px-3 py-2 text-sm font-semibold capitalize bg-zinc-900 text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                                 >
                                                     <option value="pending">Pending</option>
                                                     <option value="processing">Processing</option>
@@ -588,12 +590,12 @@ export default function OrdersPage() {
                                 </div>
                             </div>
 
-                            <div className="space-y-4 bg-zinc-950/20 p-6 rounded-3xl border border-zinc-800/40">
-                                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+                            <div className="space-y-4 bg-zinc-950/20 p-4 sm:p-6 rounded-3xl border border-zinc-800/40">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-800/80 pb-4 gap-4">
                                     <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
                                         Line Items
                                     </h3>
-                                    <div className="relative w-64">
+                                    <div className="relative w-full sm:w-64">
                                         <div className="flex items-center gap-2 bg-zinc-900/80 border border-zinc-800 rounded-xl px-3 py-1.5 shadow-sm">
                                             <Search className="h-4 w-4 text-zinc-500" />
                                             <input
@@ -629,28 +631,28 @@ export default function OrdersPage() {
 
                                 <div className="space-y-3">
                                     {editingOrderContent.line_items.map((item: any, idx: number) => (
-                                        <div key={idx} className="group flex items-center justify-between p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/50 hover:bg-zinc-800/40 transition-all">
+                                        <div key={idx} className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/50 hover:bg-zinc-800/40 transition-all gap-4">
                                             <div className="flex-1 space-y-1">
                                                 <p className="text-zinc-100 font-bold text-sm group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{item.name}</p>
                                                 <p className="text-[10px] text-zinc-500 font-mono">SKU: {item.sku || "N/A"}</p>
                                             </div>
-                                            <div className="flex items-center gap-8">
+                                            <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-8 border-t sm:border-t-0 border-zinc-800 pt-3 sm:pt-0">
                                                 <div className="flex items-center gap-3">
                                                     <label className="text-[10px] text-zinc-500 uppercase font-black">Qty</label>
                                                     <input
                                                         type="number"
                                                         value={item.quantity}
                                                         onChange={(e) => updateItemQty(idx, parseInt(e.target.value))}
-                                                        className="w-16 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-100 text-center font-bold"
+                                                        className="w-12 sm:w-16 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-100 text-center font-bold"
                                                     />
                                                 </div>
-                                                <div className="w-24 text-right">
+                                                <div className="w-20 sm:w-24 text-right shrink-0">
                                                     <p className="text-[10px] text-zinc-500 uppercase italic mb-1">Total</p>
                                                     <p className="font-bold text-zinc-100 text-sm">৳{item.total}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => removeProductFromOrder(idx)}
-                                                    className="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100"
+                                                    className="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-all sm:opacity-0 sm:group-hover:opacity-100"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </button>
@@ -721,15 +723,16 @@ export default function OrdersPage() {
                             </div>
                         )}
 
-                        <div className="px-8 py-5 border-t border-zinc-800 bg-zinc-950/80 flex justify-between items-center backdrop-blur-md">
-                            <div className="flex gap-8 text-xs text-zinc-500 uppercase font-bold tracking-widest">
-                                <div>Subtotal: <span className="text-zinc-200 ml-1 italic">৳{calculateSubtotal()}</span></div>
-                                <div>Shipping: <span className="text-zinc-200 ml-1 italic">৳{editingOrderContent.shipping_total}</span></div>
-                                <div className="text-red-400/80">Discount: <span className="ml-1 italic">৳{editingOrderContent.discount_total}</span></div>
+                        {/* Total Footer Container with better wrapping for mobile */}
+                        <div className="px-4 sm:px-8 py-5 border-t border-zinc-800 bg-zinc-950/80 flex flex-col md:flex-row justify-between items-center gap-6 backdrop-blur-md mt-auto">
+                            <div className="grid grid-cols-2 xs:flex gap-4 sm:gap-8 text-[10px] text-zinc-500 uppercase font-bold tracking-widest w-full md:w-auto">
+                                <div>Subtotal: <span className="text-zinc-200 ml-1 italic block xs:inline">৳{calculateSubtotal()}</span></div>
+                                <div>Shipping: <span className="text-zinc-200 ml-1 italic block xs:inline">৳{editingOrderContent.shipping_total}</span></div>
+                                <div className="text-red-400/80">Discount: <span className="ml-1 italic block xs:inline">৳{editingOrderContent.discount_total}</span></div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-center md:text-right w-full md:w-auto border-t md:border-t-0 border-zinc-800/50 pt-4 md:pt-0">
                                 <p className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.2em] mb-1">Payable Amount</p>
-                                <p className="text-4xl font-black text-indigo-400 leading-none drop-shadow-2xl">৳{calculateTotal()}</p>
+                                <p className="text-3xl sm:text-4xl font-black text-indigo-400 leading-none drop-shadow-2xl">৳{calculateTotal()}</p>
                             </div>
                         </div>
                     </div>

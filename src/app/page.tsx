@@ -137,8 +137,8 @@ export default function DashboardPage() {
               <ShoppingCart className="h-4 w-4 text-indigo-400" /> Recent Orders
             </h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-zinc-400">
+          <div className="overflow-x-auto overflow-y-hidden">
+            <table className="w-full text-left text-sm text-zinc-400 min-w-[500px]">
               <thead className="bg-zinc-900/50 text-xs uppercase text-zinc-500">
                 <tr>
                   <th className="px-6 py-3 font-semibold">Order</th>
@@ -187,8 +187,8 @@ export default function DashboardPage() {
               <Package className="h-4 w-4 text-amber-400" /> Out of Stock items
             </h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-zinc-400">
+          <div className="overflow-x-auto overflow-y-hidden">
+            <table className="w-full text-left text-sm text-zinc-400 min-w-[500px]">
               <thead className="bg-zinc-900/50 text-xs uppercase text-zinc-500">
                 <tr>
                   <th className="px-6 py-3 font-semibold">Product</th>
